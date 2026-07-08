@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
 import { encryptData } from '../helpers/encryption.js'
+import { generateReferralCode, getReferralLink } from '../helpers/referral.js'
 import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, ENUM_AUTH_TYPES, ENUM_ROLES, getMediaUrl, ROLES } from '../utils/index.js'
 
 dotenv.config()
@@ -46,6 +47,22 @@ const user_schema = mongoose.Schema({
         enum: ENUM_ROLES,
         default: ROLES.USER
     },
+    referral: {
+        code: {
+            type: String,
+            trim: true,
+            uppercase: true,
+        },
+        active: {
+            type: Boolean,
+            default: true,
+        },
+    },
+    referred_by_user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+    },
     active: {
         type: Boolean,
         required: true,
@@ -76,6 +93,24 @@ user_schema.pre('save', (async function (next) {
         this.password = encrypted_password
     }
 
+    if (this.isNew && !this.referral?.code) {
+
+        if (!this.referral) {
+            this.referral = { active: true }
+        }
+
+        let exists = true
+
+        while (exists) {
+            const code = generateReferralCode()
+            exists = await this.constructor.exists({ 'referral.code': code })
+
+            if (!exists) {
+                this.referral.code = code
+            }
+        }
+    }
+
     return next()
 
 }))
@@ -95,7 +130,12 @@ user_schema.virtual('image_url').get(function () {
     return getMediaUrl(this.image)
 })
 
+user_schema.virtual('referral_link').get(function () {
+    return getReferralLink(this.referral?.code)
+})
+
 user_schema.index({ email: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } })
+user_schema.index({ 'referral.code': 1 }, { unique: true, sparse: true })
 
 user_schema.plugin(mongooseLeanVirtuals)
 
