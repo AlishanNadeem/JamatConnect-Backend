@@ -21,6 +21,36 @@ const users = [
         password: ADMIN_PASSWORD,
         role: ROLES.ADMIN,
     },
+    {
+        name: 'Karim Ali',
+        email: 'karim@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.USER,
+    },
+    {
+        name: 'Yasmin Hassan',
+        email: 'yasmin@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.USER,
+    },
+    {
+        name: 'Salim Merali',
+        email: 'salim@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.USER,
+    },
+    {
+        name: 'Gulbano Shah',
+        email: 'gulbano@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.USER,
+    },
+    {
+        name: 'Nazim Hussain',
+        email: 'nazim@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.USER,
+    },
 ]
 
 const seedUsers = async () => {
