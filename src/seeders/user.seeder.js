@@ -44,6 +44,7 @@ const seedUsers = async () => {
                 email: user.email,
                 password: user.password,
                 role: user.role,
+                is_seed: true,
                 auth_provider: AUTH_TYPES.EMAIL,
                 active: true,
             })
