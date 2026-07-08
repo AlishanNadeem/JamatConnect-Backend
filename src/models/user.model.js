@@ -48,15 +48,18 @@ const user_schema = mongoose.Schema({
         default: ROLES.USER
     },
     referral: {
-        code: {
-            type: String,
-            trim: true,
-            uppercase: true,
+        type: {
+            code: {
+                type: String,
+                trim: true,
+                uppercase: true,
+            },
+            active: {
+                type: Boolean,
+                default: true,
+            },
         },
-        active: {
-            type: Boolean,
-            default: true,
-        },
+        default: null,
     },
     referred_by_user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -95,6 +98,10 @@ const user_schema = mongoose.Schema({
 
 user_schema.pre('validate', function (next) {
 
+    if (this.role === ROLES.ADMIN) {
+        this.referral = null
+    }
+
     if (this.is_seed && this.referred_by_user) {
         return next(new Error('Seed members cannot have a referrer.'))
     }
@@ -110,7 +117,7 @@ user_schema.pre('save', (async function (next) {
         this.password = encrypted_password
     }
 
-    if (this.isNew && this.role === ROLES.USER && !this.referral?.code) {
+    if (this.role === ROLES.USER && this.isNew && !this.referral?.code) {
 
         if (!this.referral) {
             this.referral = { active: true }
@@ -134,9 +141,19 @@ user_schema.pre('save', (async function (next) {
 
 user_schema.pre('findOneAndUpdate', (async function (next) {
 
-    if (this._update.password) {
-        let encrypted_password = await encryptData(this._update.password)
-        this._update.password = encrypted_password
+    const update = this.getUpdate()
+    const $set = update?.$set ?? update
+
+    if ($set?.password) {
+        let encrypted_password = await encryptData($set.password)
+        if (update.$set) update.$set.password = encrypted_password
+        else update.password = encrypted_password
+    }
+
+    if ($set?.role === ROLES.ADMIN) {
+        if (update.$set) update.$set.referral = null
+        else if (update.$unset) update.$unset.referral = ''
+        else update.referral = null
     }
 
     return next()
