@@ -1,18 +1,26 @@
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import User from '../models/user.model.js'
-import { AUTH_TYPES, generatePassword } from '../utils/index.js'
+import { AUTH_TYPES, ROLES } from '../utils/index.js'
 import connectDB from '../config/db.js'
-import { sendMail } from '../helpers/mail.js'
 
 dotenv.config()
+
+const ADMIN_PASSWORD = 'Admin@123'
 
 const users = [
     {
         name: 'Alishan Nadeem',
         email: 'alishan.nadeem22@gmail.com',
-        role: 'admin',
-    }
+        password: ADMIN_PASSWORD,
+        role: ROLES.ADMIN,
+    },
+    {
+        name: 'Jamat Connect Admin',
+        email: 'info@jamatconnect.com',
+        password: ADMIN_PASSWORD,
+        role: ROLES.ADMIN,
+    },
 ]
 
 const seedUsers = async () => {
@@ -31,35 +39,18 @@ const seedUsers = async () => {
                 continue
             }
 
-            const password = generatePassword()
-
             const new_user = new User({
                 name: user.name,
                 email: user.email,
-                password,
+                password: user.password,
                 role: user.role,
                 auth_provider: AUTH_TYPES.EMAIL,
-                active: true
+                active: true,
             })
 
             await new_user.save()
 
-            await sendMail({
-                to: user.email,
-                subject: "Welcome to JamatConnect",
-                template: "signup",
-                template_vars: {
-                    name: user.name,
-                    email: user.email,
-                    password: password,
-                    app_name: "JamatConnect",
-                    logo_url: `${process.env.BASE_URL}uploads/logo.png`,
-                    login_url: `${process.env.BASE_URL}login`
-                }
-            })
-
             console.log(`✅ Seeded: ${user.email} (role: ${user.role})`)
-            console.log(`   🔑 Password: ${password}`)
             created++
         }
 
