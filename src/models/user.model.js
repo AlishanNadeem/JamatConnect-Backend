@@ -110,7 +110,7 @@ user_schema.pre('save', (async function (next) {
         this.password = encrypted_password
     }
 
-    if (this.isNew && !this.referral?.code) {
+    if (this.isNew && this.role === ROLES.USER && !this.referral?.code) {
 
         if (!this.referral) {
             this.referral = { active: true }
