@@ -58,10 +58,17 @@ const user_schema = mongoose.Schema({
             default: true,
         },
     },
-    referred_by_user_id: {
+    referred_by_user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         default: null,
+        required: function () {
+            return !this.is_seed
+        },
+    },
+    is_seed: {
+        type: Boolean,
+        default: false,
     },
     active: {
         type: Boolean,
@@ -84,6 +91,16 @@ const user_schema = mongoose.Schema({
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
+})
+
+user_schema.pre('validate', function (next) {
+
+    if (this.is_seed && this.referred_by_user) {
+        return next(new Error('Seed members cannot have a referrer.'))
+    }
+
+    next()
+
 })
 
 user_schema.pre('save', (async function (next) {
