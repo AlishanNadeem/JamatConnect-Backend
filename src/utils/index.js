@@ -3,13 +3,13 @@ import crypto from 'crypto'
 
 const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
-const AUTH_TYPES = {
+export const AUTH_TYPES = {
     EMAIL: "email",
     GOOGLE: "google",
     APPLE: "apple",
 }
 
-const ENUM_AUTH_TYPES = Object.values(AUTH_TYPES)
+export const ENUM_AUTH_TYPES = Object.values(AUTH_TYPES)
 
 export const GENDERS = {
     MALE: "male",
@@ -26,7 +26,7 @@ export const generatePassword = (length = 16) => {
     ).join('')
 }
 
-const generateOtp = async (length = 6) => {
+export const generateOtp = async (length = 6) => {
 
     if (length < 4 || length > 10) {
         throw new Error('OTP length must be between 4 and 10 digits')
@@ -56,10 +56,4 @@ export const getMediaUrl = (path) => {
 
     return `${process.env.BASE_URL}${path}`
 
-}
-
-export {
-    AUTH_TYPES,
-    ENUM_AUTH_TYPES,
-    generateOtp,
 }
