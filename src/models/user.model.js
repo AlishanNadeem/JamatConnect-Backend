@@ -3,6 +3,7 @@ import mongoose from 'mongoose'
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
 import { encryptData } from '../helpers/encryption.js'
 import { generateReferralCode, getReferralLink } from '../helpers/referral.js'
+import referral_schema from '../schemas/refferal.schema.js'
 import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, ENUM_AUTH_TYPES, ENUM_ROLES, getMediaUrl, ROLES } from '../utils/index.js'
 
 dotenv.config()
@@ -48,17 +49,7 @@ const user_schema = mongoose.Schema({
         default: ROLES.USER
     },
     referral: {
-        type: {
-            code: {
-                type: String,
-                trim: true,
-                uppercase: true,
-            },
-            active: {
-                type: Boolean,
-                default: true,
-            },
-        },
+        type: referral_schema,
         default: null,
     },
     referred_by_user: {
