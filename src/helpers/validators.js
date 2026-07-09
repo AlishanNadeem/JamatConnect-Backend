@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { AUTH_TYPES } from '../utils/index.js'
+import { AUTH_TYPES, ENUM_ROLES, ROLES } from '../utils/index.js'
 
 export const SIGNUP_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
@@ -35,6 +35,12 @@ export const LOGIN_VALIDATOR = Joi.object({
     password: Joi.string().required().messages({
         'string.empty': 'Password is required',
     }),
+    source: Joi.string()
+        .valid(...ENUM_ROLES)
+        .default(ROLES.USER)
+        .messages({
+            'any.only': `Source must be one of: ${ENUM_ROLES.join(', ')}`,
+        }),
     device_id: Joi.string().optional().messages({
         'string.base': 'Device ID must be a string',
     }),
@@ -52,6 +58,12 @@ export const SOCIAL_LOGIN_VALIDATOR = Joi.object({
             'any.only': `Type must be one of: ${Object.values(AUTH_TYPES).join(', ')}`,
             'string.empty': 'Type is required',
             'any.required': 'Type is required',
+        }),
+    source: Joi.string()
+        .valid(...ENUM_ROLES)
+        .default(ROLES.USER)
+        .messages({
+            'any.only': `Source must be one of: ${ENUM_ROLES.join(', ')}`,
         }),
     device_id: Joi.string().optional().messages({
         'string.base': 'Device ID must be a string',

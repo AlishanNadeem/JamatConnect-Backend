@@ -134,15 +134,6 @@ export const socialLogin = async (req, res, next) => {
 
         }
 
-        let request_source = source || ROLES.USER
-
-        if (request_source !== user.role) {
-            return res.status(401).json({
-                success: false,
-                message: 'Unauthorized.',
-            })
-        }
-
         if (device_id && !user.device_ids.includes(device_id)) {
             user.device_ids.push(device_id)
             await user.save()
@@ -157,11 +148,14 @@ export const socialLogin = async (req, res, next) => {
 
         logger.info(`User logged in via ${type}: ${email}`)
 
+        const user_data = user.toObject({ virtuals: true })
+        delete user_data.password
+
         return res.status(200).json({
             success: true,
             message: 'Login successful.',
             data: {
-                user,
+                user: user_data,
                 token
             },
         })
@@ -175,7 +169,7 @@ export const socialLogin = async (req, res, next) => {
 export const login = async (req, res, next) => {
     try {
 
-        const { email, password, device_id } = req.body
+        const { email, password, device_id, source } = req.body
 
         const user = await User.findOne({ email })
             .collation({ locale: 'en', strength: 2 })
@@ -200,6 +194,18 @@ export const login = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password.',
+            })
+        }
+
+        const login_source = source || ROLES.USER
+
+        if (
+            (login_source === ROLES.ADMIN && user.role !== ROLES.ADMIN) ||
+            (login_source === ROLES.USER && user.role === ROLES.ADMIN)
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized.',
             })
         }
 
