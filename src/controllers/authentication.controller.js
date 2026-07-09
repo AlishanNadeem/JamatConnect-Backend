@@ -3,11 +3,12 @@ import jwt from 'jsonwebtoken'
 import logger from '../config/logger.js'
 import { compareData } from '../helpers/encryption.js'
 import { removeFiles } from '../helpers/folder.js'
-import { REFERRAL_INVALID_REASONS } from '../helpers/referral.js'
 import { sendMail } from '../helpers/mail.js'
+import { REFERRAL_INVALID_REASONS } from '../helpers/referral.js'
 import { generateToken, verifyToken } from '../helpers/token.js'
 import Otp from '../models/otp.model.js'
 import User from '../models/user.model.js'
+import { getPasswordResetBlock } from '../services/auth.service.js'
 import { recordLoginLog } from '../services/log.service.js'
 import { recordReferral, resolveReferralCode } from '../services/referral.service.js'
 import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES } from '../utils/index.js'
@@ -349,16 +350,25 @@ export const forgetPassword = async (req, res, next) => {
         const user = await User.findOne({ email }).collation({ locale: 'en', strength: 2 })
 
         if (!user) {
-            return res.status(404).json({
+            return res.status(401).json({
                 success: false,
-                message: 'User not found with this email.',
+                message: 'Invalid email.',
+            })
+        }
+
+        const reset_block = getPasswordResetBlock(user)
+
+        if (reset_block) {
+            return res.status(reset_block.status).json({
+                success: false,
+                message: reset_block.message,
             })
         }
 
         await Otp.deleteMany({ user: user._id })
 
         const { hashed, otp } = await generateOtp()
-        const expiry = new Date(Date.now() + 10 * 60 * 1000)
+        const expiry = new Date(Date.now() + 15 * 60 * 1000)
 
         await Otp.create({
             user: user._id,
@@ -406,6 +416,15 @@ export const verifyOtp = async (req, res, next) => {
             return res.status(404).json({
                 success: false,
                 message: 'User not found with this email.',
+            })
+        }
+
+        const reset_block = getPasswordResetBlock(user)
+
+        if (reset_block) {
+            return res.status(reset_block.status).json({
+                success: false,
+                message: reset_block.message,
             })
         }
 
@@ -491,10 +510,19 @@ export const setPassword = async (req, res, next) => {
             })
         }
 
+        const reset_block = getPasswordResetBlock(user)
+
+        if (reset_block) {
+            return res.status(reset_block.status).json({
+                success: false,
+                message: reset_block.message,
+            })
+        }
+
         user.password = password
         await user.save()
 
-        await Otp.deleteMany({ user: decoded._id })
+        await Otp.deleteMany({ user: decoded.id })
 
         logger.info(`Password set successfully by ${user.name}`)
 
