@@ -1,18 +1,27 @@
 import logger from "../config/logger.js"
+import { removeFiles } from "../helpers/folder.js"
 
 const validator = (schema, options = { optional: false }) => (req, res, next) => {
 
     const { optional } = options
 
+    const cleanupUploadedFile = () => {
+        if (req.file?.path) {
+            removeFiles(req.file.path)
+        }
+    }
+
     if (!req.body || Object.keys(req.body).length === 0) {
         if (optional) {
             return next()
-        } else {
-            return res.status(400).json({
-                success: false,
-                message: 'Request body is missing or empty.',
-            })
         }
+
+        cleanupUploadedFile()
+
+        return res.status(400).json({
+            success: false,
+            message: 'Request body is missing or empty.',
+        })
     }
 
     console.log(req.body)
@@ -21,6 +30,7 @@ const validator = (schema, options = { optional: false }) => (req, res, next) =>
 
     if (error) {
         logger.error(error.details.map((err) => err.message))
+        cleanupUploadedFile()
         return res.status(400).json({
             success: false,
             message: 'Validation failed',

@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken'
 import logger from '../config/logger.js'
 import { compareData } from '../helpers/encryption.js'
+import { removeFiles } from '../helpers/folder.js'
 import { REFERRAL_INVALID_REASONS } from '../helpers/referral.js'
 import { sendMail } from '../helpers/mail.js'
 import { generateToken, verifyToken } from '../helpers/token.js'
@@ -14,6 +15,16 @@ import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES
 dotenv.config()
 
 export const signup = async (req, res, next) => {
+
+    const uploaded_image = req.file?.path
+    let user_saved = false
+
+    const cleanupUploadedImage = () => {
+        if (uploaded_image && !user_saved) {
+            removeFiles(uploaded_image)
+        }
+    }
+
     try {
 
         const { body, file } = req
@@ -28,6 +39,7 @@ export const signup = async (req, res, next) => {
         const exists = await User.findOne({ email }).collation({ locale: 'en', strength: 2 })
 
         if (exists) {
+            cleanupUploadedImage()
             return res.status(409).json({
                 success: false,
                 message: 'User already exists with this email.',
@@ -41,6 +53,8 @@ export const signup = async (req, res, next) => {
                 ? 'This referral code is no longer active.'
                 : 'Invalid referral code.'
 
+            cleanupUploadedImage()
+
             return res.status(400).json({
                 success: false,
                 message,
@@ -50,6 +64,7 @@ export const signup = async (req, res, next) => {
         const { referrer } = referral_result
 
         if (referrer.email.toLowerCase() === email.toLowerCase()) {
+            cleanupUploadedImage()
             return res.status(400).json({
                 success: false,
                 message: 'You cannot use your own referral code.',
@@ -69,6 +84,7 @@ export const signup = async (req, res, next) => {
 
         const user = new User(payload)
         await user.save()
+        user_saved = true
 
         await recordReferral({
             referrer_user_id: referrer._id,
@@ -98,6 +114,7 @@ export const signup = async (req, res, next) => {
         })
 
     } catch (error) {
+        cleanupUploadedImage()
         next(error)
     }
 }
