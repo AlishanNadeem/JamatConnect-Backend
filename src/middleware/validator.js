@@ -24,8 +24,6 @@ const validator = (schema, options = { optional: false }) => (req, res, next) =>
         })
     }
 
-    console.log(req.body)
-
     const { value, error } = schema.validate(req.body, { abortEarly: false, stripUnknown: true });
 
     if (error) {
