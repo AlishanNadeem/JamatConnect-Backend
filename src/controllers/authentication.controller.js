@@ -6,7 +6,8 @@ import { sendMail } from '../helpers/mail.js'
 import { generateToken, verifyToken } from '../helpers/token.js'
 import Otp from '../models/otp.model.js'
 import User from '../models/user.model.js'
-import { AUTH_TYPES, generateOtp, ROLES } from '../utils/index.js'
+import { recordLoginLog } from '../services/log.service.js'
+import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES } from '../utils/index.js'
 
 dotenv.config()
 
@@ -170,11 +171,21 @@ export const login = async (req, res, next) => {
     try {
 
         const { email, password, device_id, source } = req.body
+        const login_source = source || ROLES.USER
 
         const user = await User.findOne({ email })
             .collation({ locale: 'en', strength: 2 })
 
         if (!user) {
+            recordLoginLog({
+                req,
+                email,
+                event: LOGIN_LOG_EVENTS.LOGIN_FAILED,
+                source: login_source,
+                failure_reason: LOGIN_FAILURE_REASONS.INVALID_CREDENTIALS,
+                device_id,
+            })
+
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password.',
@@ -182,6 +193,16 @@ export const login = async (req, res, next) => {
         }
 
         if (!user.active) {
+            recordLoginLog({
+                req,
+                user,
+                email,
+                event: LOGIN_LOG_EVENTS.LOGIN_FAILED,
+                source: login_source,
+                failure_reason: LOGIN_FAILURE_REASONS.INACTIVE,
+                device_id,
+            })
+
             return res.status(403).json({
                 success: false,
                 message: 'Your account has been deactivated. Please contact support.',
@@ -191,18 +212,36 @@ export const login = async (req, res, next) => {
         const matched = await compareData(password, user.password)
 
         if (!matched) {
+            recordLoginLog({
+                req,
+                user,
+                email,
+                event: LOGIN_LOG_EVENTS.LOGIN_FAILED,
+                source: login_source,
+                failure_reason: LOGIN_FAILURE_REASONS.INVALID_CREDENTIALS,
+                device_id,
+            })
+
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password.',
             })
         }
 
-        const login_source = source || ROLES.USER
-
         if (
             (login_source === ROLES.ADMIN && user.role !== ROLES.ADMIN) ||
             (login_source === ROLES.USER && user.role === ROLES.ADMIN)
         ) {
+            recordLoginLog({
+                req,
+                user,
+                email,
+                event: LOGIN_LOG_EVENTS.LOGIN_FAILED,
+                source: login_source,
+                failure_reason: LOGIN_FAILURE_REASONS.UNAUTHORIZED,
+                device_id,
+            })
+
             return res.status(403).json({
                 success: false,
                 message: 'Unauthorized.',
@@ -222,6 +261,15 @@ export const login = async (req, res, next) => {
         })
 
         logger.info(`User logged in: ${email}`)
+
+        recordLoginLog({
+            req,
+            user,
+            email,
+            event: LOGIN_LOG_EVENTS.LOGIN_SUCCESS,
+            source: login_source,
+            device_id,
+        })
 
         const user_data = user.toObject({ virtuals: true })
         delete user_data.password
@@ -434,6 +482,15 @@ export const logout = async (req, res, next) => {
         }
 
         logger.info(`User logged out: ${user.email}`)
+
+        recordLoginLog({
+            req,
+            user,
+            email: user.email,
+            event: LOGIN_LOG_EVENTS.LOGOUT,
+            source: user.role,
+            device_id,
+        })
 
         return res.status(200).json({
             success: true,
