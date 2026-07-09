@@ -25,6 +25,10 @@ export const SIGNUP_VALIDATOR = Joi.object({
         }),
         otherwise: Joi.optional(),
     }),
+    referral_code: Joi.string().trim().required().messages({
+        'string.empty': 'Referral code is required',
+        'any.required': 'Referral code is required',
+    }),
 })
 
 export const LOGIN_VALIDATOR = Joi.object({

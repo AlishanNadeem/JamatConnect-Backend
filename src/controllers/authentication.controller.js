@@ -2,11 +2,13 @@ import dotenv from 'dotenv'
 import jwt from 'jsonwebtoken'
 import logger from '../config/logger.js'
 import { compareData } from '../helpers/encryption.js'
+import { REFERRAL_INVALID_REASONS } from '../helpers/referral.js'
 import { sendMail } from '../helpers/mail.js'
 import { generateToken, verifyToken } from '../helpers/token.js'
 import Otp from '../models/otp.model.js'
 import User from '../models/user.model.js'
 import { recordLoginLog } from '../services/log.service.js'
+import { recordReferral, resolveReferralCode } from '../services/referral.service.js'
 import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES } from '../utils/index.js'
 
 dotenv.config()
@@ -19,7 +21,8 @@ export const signup = async (req, res, next) => {
         const {
             name,
             email,
-            password
+            password,
+            referral_code,
         } = body
 
         const exists = await User.findOne({ email }).collation({ locale: 'en', strength: 2 })
@@ -31,10 +34,33 @@ export const signup = async (req, res, next) => {
             })
         }
 
+        const referral_result = await resolveReferralCode(referral_code)
+
+        if (!referral_result.valid) {
+            const message = referral_result.reason === REFERRAL_INVALID_REASONS.REVOKED
+                ? 'This referral code is no longer active.'
+                : 'Invalid referral code.'
+
+            return res.status(400).json({
+                success: false,
+                message,
+            })
+        }
+
+        const { referrer } = referral_result
+
+        if (referrer.email.toLowerCase() === email.toLowerCase()) {
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot use your own referral code.',
+            })
+        }
+
         let payload = {
             name,
             email,
-            password
+            password,
+            referred_by_user: referrer._id,
         }
 
         if (file && file.path) {
@@ -43,6 +69,12 @@ export const signup = async (req, res, next) => {
 
         const user = new User(payload)
         await user.save()
+
+        await recordReferral({
+            referrer_user_id: referrer._id,
+            referred_user_id: user._id,
+            referral_code,
+        })
 
         const token = await generateToken({
             id: user._id,
@@ -53,11 +85,14 @@ export const signup = async (req, res, next) => {
 
         logger.info(`User registered successfully: ${email}`)
 
+        const user_data = user.toObject({ virtuals: true })
+        delete user_data.password
+
         return res.status(201).json({
             success: true,
             message: 'User registered successfully.',
             data: {
-                user,
+                user: user_data,
                 token
             },
         })
