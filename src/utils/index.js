@@ -48,6 +48,22 @@ export const ROLES = {
 
 export const ENUM_ROLES = Object.values(ROLES)
 
+export const LOGIN_LOG_EVENTS = {
+    LOGIN_SUCCESS: "login_success",
+    LOGIN_FAILED: "login_failed",
+    LOGOUT: "logout",
+}
+
+export const ENUM_LOGIN_LOG_EVENTS = Object.values(LOGIN_LOG_EVENTS)
+
+export const LOGIN_FAILURE_REASONS = {
+    INVALID_CREDENTIALS: "invalid_credentials",
+    INACTIVE: "inactive",
+    UNAUTHORIZED: "unauthorized",
+}
+
+export const ENUM_LOGIN_FAILURE_REASONS = Object.values(LOGIN_FAILURE_REASONS)
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
