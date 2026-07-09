@@ -181,7 +181,7 @@ export const login = async (req, res, next) => {
             .collation({ locale: 'en', strength: 2 })
 
         if (!user) {
-            return res.status(404).json({
+            return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password.',
             })
@@ -217,11 +217,14 @@ export const login = async (req, res, next) => {
 
         logger.info(`User logged in: ${email}`)
 
+        const user_data = user.toObject({ virtuals: true })
+        delete user_data.password
+
         return res.status(200).json({
             success: true,
             message: 'Login successful.',
             data: {
-                user,
+                user: user_data,
                 token,
             },
         })
