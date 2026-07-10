@@ -177,3 +177,24 @@ export const CREATE_FEEDBACK_VALIDATOR = Joi.object({
         'string.empty': 'Message cannot be empty.'
     })
 })
+
+export const CREATE_BUSINESS_CATEGORY_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Name is required.',
+        'string.empty': 'Name cannot be empty.',
+    }),
+    description: Joi.string().max(500).optional().allow('').messages({
+        'string.max': 'Description cannot exceed 500 characters.',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').default(true),
+})
+
+export const UPDATE_BUSINESS_CATEGORY_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Name cannot be empty.',
+    }),
+    description: Joi.string().max(500).optional().allow('').messages({
+        'string.max': 'Description cannot exceed 500 characters.',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+})

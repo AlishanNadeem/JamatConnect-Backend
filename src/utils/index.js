@@ -39,6 +39,31 @@ export const generateOtp = async (length = 6) => {
 
 }
 
+export const searchRegex = (text, exact = false) => {
+
+    if (!text) return /.*/
+
+    const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+    const pattern = exact ? `^${escaped}$` : escaped
+
+    return new RegExp(pattern, 'i')
+
+}
+
+export const buildDateRangeQuery = (from_date, to_date) => {
+
+    if (!from_date && !to_date) return undefined
+
+    const condition = {}
+
+    if (from_date) condition['$gte'] = new Date(from_date)
+    if (to_date) condition['$lte'] = new Date(to_date)
+
+    return condition
+
+}
+
 export const DUMMY_USER_IMAGE_PATH = "uploads/user/dummy.jpg"
 
 export const ROLES = {
