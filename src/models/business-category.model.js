@@ -21,6 +21,7 @@ const business_category_schema = mongoose.Schema({
         default: true,
     },
 }, {
+    id: false,
     timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },

@@ -1,5 +1,6 @@
 import logger from '../config/logger.js'
 import { removeFiles } from '../helpers/folder.js'
+import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import BusinessCategory from '../models/business-category.model.js'
 import { ROLES, searchRegex } from '../utils/index.js'
 
@@ -64,6 +65,11 @@ export const getBusinessCategories = async (req, res, next) => {
 
         const { decoded, query } = req
         const { active, search } = query
+        const { skip, limit, page, page_size } = getPagination(query)
+
+        const sort = {
+            name: 1
+        }
 
         const filter = {}
 
@@ -74,12 +80,15 @@ export const getBusinessCategories = async (req, res, next) => {
             filter.active = true
         }
 
-        const categories = await BusinessCategory.find(filter).sort({ name: 1 }).lean({ virtuals: true })
+        const [categories, total] = await Promise.all([
+            BusinessCategory.find(filter).sort(sort).skip(skip).limit(limit).lean({ virtuals: true }),
+            BusinessCategory.countDocuments(filter),
+        ])
 
         return res.status(200).json({
             success: true,
             message: 'Business categories fetched successfully.',
-            data: categories,
+            ...buildPaginationResponse(categories, total, page, page_size),
         })
 
     } catch (error) {
@@ -152,7 +161,7 @@ export const updateBusinessCategory = async (req, res, next) => {
                     message: 'Business category with this name already exists.',
                 })
             }
-            
+
         }
 
         const updated_fields = {}
