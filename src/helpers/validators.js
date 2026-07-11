@@ -200,22 +200,46 @@ export const UPDATE_BUSINESS_CATEGORY_VALIDATOR = Joi.object({
 })
 
 const ADDRESS_VALIDATOR = Joi.object({
-    formatted: Joi.string().required(),
-    country: Joi.string().required(),
-    state: Joi.string().required(),
-    city: Joi.string().required(),
-    latitude: Joi.number().required(),
-    longitude: Joi.number().required(),
+    formatted: Joi.string().required().messages({
+        'any.required': 'Formatted address is required.',
+        'string.empty': 'Formatted address cannot be empty.',
+    }),
+    country: Joi.string().required().messages({
+        'any.required': 'Country is required.',
+        'string.empty': 'Country cannot be empty.',
+    }),
+    state: Joi.string().required().messages({
+        'any.required': 'State is required.',
+        'string.empty': 'State cannot be empty.',
+    }),
+    city: Joi.string().required().messages({
+        'any.required': 'City is required.',
+        'string.empty': 'City cannot be empty.',
+    }),
+    latitude: Joi.number().required().messages({
+        'any.required': 'Latitude is required.',
+        'number.base': 'Latitude must be a number.',
+    }),
+    longitude: Joi.number().required().messages({
+        'any.required': 'Longitude is required.',
+        'number.base': 'Longitude must be a number.',
+    }),
 })
 
 const BUSINESS_HOURS_VALIDATOR = Joi.array().items(Joi.object({
-    day: Joi.string().valid(...ENUM_BUSINESS_DAYS).required(),
+    day: Joi.string().valid(...ENUM_BUSINESS_DAYS).required().messages({
+        'any.only': `Day must be one of: ${ENUM_BUSINESS_DAYS.join(', ')}`,
+        'any.required': 'Day is required.',
+        'string.empty': 'Day cannot be empty.',
+    }),
     open: Joi.string().allow(null, '').optional(),
     close: Joi.string().allow(null, '').optional(),
     closed: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
-}))
+})).messages({
+    'array.base': 'Business hours must be an array.',
+})
 
-const jsonField = (schema) => Joi.alternatives().try(
+const jsonField = (schema, invalid_message = 'Please provide a valid value.') => Joi.alternatives().try(
     schema,
     Joi.string().custom((value, helpers) => {
         try {
@@ -226,34 +250,93 @@ const jsonField = (schema) => Joi.alternatives().try(
         } catch {
             return helpers.error('any.invalid')
         }
+    }).messages({
+        'any.invalid': invalid_message,
     })
 )
 
 export const CREATE_BUSINESS_VALIDATOR = Joi.object({
-    name: Joi.string().min(2).max(100).required(),
-    description: Joi.string().min(10).max(1000).required(),
-    category: Joi.string().required(),
-    email: Joi.string().email().optional().allow(''),
-    phone: Joi.string().required(),
-    country_code: Joi.string().required(),
-    dialing_code: Joi.string().required(),
-    website: Joi.string().uri().optional().allow(''),
-    address: jsonField(ADDRESS_VALIDATOR.required()).required(),
-    hours: jsonField(BUSINESS_HOURS_VALIDATOR).optional(),
+    name: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Business name is required.',
+        'string.empty': 'Business name cannot be empty.',
+        'string.min': 'Business name must be at least 2 characters long.',
+        'string.max': 'Business name cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).required().messages({
+        'any.required': 'Description is required.',
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    category: Joi.string().required().messages({
+        'any.required': 'Business category is required.',
+        'string.empty': 'Business category cannot be empty.',
+    }),
+    email: Joi.string().email().optional().allow('').messages({
+        'string.email': 'Please enter a valid email.',
+    }),
+    phone: Joi.string().required().messages({
+        'any.required': 'Phone number is required.',
+        'string.empty': 'Phone number cannot be empty.',
+    }),
+    country_code: Joi.string().required().messages({
+        'any.required': 'Country code is required.',
+        'string.empty': 'Country code cannot be empty.',
+    }),
+    dialing_code: Joi.string().required().messages({
+        'any.required': 'Dialing code is required.',
+        'string.empty': 'Dialing code cannot be empty.',
+    }),
+    website: Joi.string().uri().optional().allow('').messages({
+        'string.uri': 'Please enter a valid website URL.',
+    }),
+    address: jsonField(ADDRESS_VALIDATOR.required(), 'Please provide a valid address.').required().messages({
+        'any.required': 'Address is required.',
+        'any.invalid': 'Please provide a valid address.',
+    }),
+    hours: jsonField(BUSINESS_HOURS_VALIDATOR, 'Please provide valid business hours.').optional().messages({
+        'any.invalid': 'Please provide valid business hours.',
+    }),
 })
 
 export const UPDATE_BUSINESS_VALIDATOR = Joi.object({
-    name: Joi.string().min(2).max(100).optional(),
-    description: Joi.string().min(10).max(1000).optional(),
-    category: Joi.string().optional(),
-    email: Joi.string().email().optional().allow(''),
-    phone: Joi.string().optional(),
-    country_code: Joi.string().optional(),
-    dialing_code: Joi.string().optional(),
-    website: Joi.string().uri().optional().allow(''),
-    address: jsonField(ADDRESS_VALIDATOR).optional(),
-    hours: jsonField(BUSINESS_HOURS_VALIDATOR).optional(),
-    status: Joi.string().valid(...ENUM_BUSINESS_STATUS).optional(),
+    name: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Business name cannot be empty.',
+        'string.min': 'Business name must be at least 2 characters long.',
+        'string.max': 'Business name cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).optional().messages({
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    category: Joi.string().optional().messages({
+        'string.empty': 'Business category cannot be empty.',
+    }),
+    email: Joi.string().email().optional().allow('').messages({
+        'string.email': 'Please enter a valid email.',
+    }),
+    phone: Joi.string().optional().messages({
+        'string.empty': 'Phone number cannot be empty.',
+    }),
+    country_code: Joi.string().optional().messages({
+        'string.empty': 'Country code cannot be empty.',
+    }),
+    dialing_code: Joi.string().optional().messages({
+        'string.empty': 'Dialing code cannot be empty.',
+    }),
+    website: Joi.string().uri().optional().allow('').messages({
+        'string.uri': 'Please enter a valid website URL.',
+    }),
+    address: jsonField(ADDRESS_VALIDATOR, 'Please provide a valid address.').optional().messages({
+        'any.invalid': 'Please provide a valid address.',
+    }),
+    hours: jsonField(BUSINESS_HOURS_VALIDATOR, 'Please provide valid business hours.').optional().messages({
+        'any.invalid': 'Please provide valid business hours.',
+    }),
+    status: Joi.string().valid(...ENUM_BUSINESS_STATUS).optional().messages({
+        'any.only': `Status must be one of: ${ENUM_BUSINESS_STATUS.join(', ')}`,
+    }),
     verified: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     featured: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
