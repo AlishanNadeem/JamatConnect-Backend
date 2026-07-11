@@ -5,7 +5,7 @@ import logger from '../config/logger.js'
 export const makeFolders = () => {
 
     const base_path = path.resolve('uploads')
-    const sub_folders = ['user', 'business-category']
+    const sub_folders = ['user', 'business-category', 'business']
 
     if (!fs.existsSync(base_path)) {
         fs.mkdirSync(base_path, { recursive: true })
