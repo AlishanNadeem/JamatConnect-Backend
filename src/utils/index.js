@@ -73,6 +73,8 @@ export const ROLES = {
 
 export const ENUM_ROLES = Object.values(ROLES)
 
+export const isAdmin = (role) => role === ROLES.ADMIN
+
 export const LOGIN_LOG_EVENTS = {
     LOGIN_SUCCESS: "login_success",
     LOGIN_FAILED: "login_failed",
