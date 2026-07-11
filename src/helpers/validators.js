@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { AUTH_TYPES, ENUM_ROLES, ROLES } from '../utils/index.js'
+import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
 
 export const SIGNUP_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
@@ -197,4 +197,65 @@ export const UPDATE_BUSINESS_CATEGORY_VALIDATOR = Joi.object({
         'string.max': 'Description cannot exceed 500 characters.',
     }),
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+})
+
+const ADDRESS_VALIDATOR = Joi.object({
+    formatted: Joi.string().required(),
+    country: Joi.string().required(),
+    state: Joi.string().required(),
+    city: Joi.string().required(),
+    latitude: Joi.number().required(),
+    longitude: Joi.number().required(),
+})
+
+const BUSINESS_HOURS_VALIDATOR = Joi.array().items(Joi.object({
+    day: Joi.string().valid(...ENUM_BUSINESS_DAYS).required(),
+    open: Joi.string().allow(null, '').optional(),
+    close: Joi.string().allow(null, '').optional(),
+    closed: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+}))
+
+const jsonField = (schema) => Joi.alternatives().try(
+    schema,
+    Joi.string().custom((value, helpers) => {
+        try {
+            const parsed = JSON.parse(value)
+            const { error, value: validated } = schema.validate(parsed)
+            if (error) return helpers.error('any.invalid')
+            return validated
+        } catch {
+            return helpers.error('any.invalid')
+        }
+    })
+)
+
+export const CREATE_BUSINESS_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    description: Joi.string().min(10).max(1000).required(),
+    category: Joi.string().required(),
+    email: Joi.string().email().optional().allow(''),
+    phone: Joi.string().required(),
+    country_code: Joi.string().required(),
+    dialing_code: Joi.string().required(),
+    website: Joi.string().uri().optional().allow(''),
+    address: jsonField(ADDRESS_VALIDATOR.required()).required(),
+    hours: jsonField(BUSINESS_HOURS_VALIDATOR).optional(),
+})
+
+export const UPDATE_BUSINESS_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).optional(),
+    description: Joi.string().min(10).max(1000).optional(),
+    category: Joi.string().optional(),
+    email: Joi.string().email().optional().allow(''),
+    phone: Joi.string().optional(),
+    country_code: Joi.string().optional(),
+    dialing_code: Joi.string().optional(),
+    website: Joi.string().uri().optional().allow(''),
+    address: jsonField(ADDRESS_VALIDATOR).optional(),
+    hours: jsonField(BUSINESS_HOURS_VALIDATOR).optional(),
+    status: Joi.string().valid(...ENUM_BUSINESS_STATUS).optional(),
+    verified: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+    featured: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+    rejection_reason: Joi.string().allow(null, '').optional(),
 })
