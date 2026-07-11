@@ -89,6 +89,27 @@ export const LOGIN_FAILURE_REASONS = {
 
 export const ENUM_LOGIN_FAILURE_REASONS = Object.values(LOGIN_FAILURE_REASONS)
 
+export const BUSINESS_STATUS = {
+    DRAFT: "draft",
+    PENDING: "pending",
+    APPROVED: "approved",
+    REJECTED: "rejected",
+}
+
+export const ENUM_BUSINESS_STATUS = Object.values(BUSINESS_STATUS)
+
+export const BUSINESS_DAYS = {
+    MONDAY: "monday",
+    TUESDAY: "tuesday",
+    WEDNESDAY: "wednesday",
+    THURSDAY: "thursday",
+    FRIDAY: "friday",
+    SATURDAY: "saturday",
+    SUNDAY: "sunday",
+}
+
+export const ENUM_BUSINESS_DAYS = Object.values(BUSINESS_DAYS)
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
