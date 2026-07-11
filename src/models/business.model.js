@@ -66,10 +66,12 @@ const business_schema = mongoose.Schema({
     logo: {
         type: String,
         trim: true,
+        required: true,
     },
     image: {
         type: String,
         trim: true,
+        required: true,
     },
     verified: {
         type: Boolean,

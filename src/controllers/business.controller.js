@@ -32,6 +32,14 @@ export const createBusiness = async (req, res, next) => {
             hours,
         } = body
 
+        if (!uploaded_logo || !uploaded_image) {
+            cleanupUploadedFiles()
+            return res.status(400).json({
+                success: false,
+                message: 'Business logo and image are required.',
+            })
+        }
+
         const category_exists = await BusinessCategory.findOne({ _id: category, active: true })
 
         if (!category_exists) {
