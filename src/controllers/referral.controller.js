@@ -11,12 +11,12 @@ export const getMyReferredUsers = async (req, res, next) => {
         const filter = { referrer_user: decoded.id }
 
         const referral_query = Referral.find(filter)
-            .populate('referred_user', 'name email createdAt')
+            .populate('referred_user', 'name email image createdAt')
             .sort({ createdAt: -1 })
             .skip(skip).limit(limit)
 
         const [referrals, count] = await Promise.all([
-            referral_query.lean(),
+            referral_query.lean({ virtuals: true }),
             Referral.countDocuments(filter),
         ])
 
@@ -25,6 +25,8 @@ export const getMyReferredUsers = async (req, res, next) => {
             .map((referral) => ({
                 name: referral.referred_user.name,
                 email: referral.referred_user.email,
+                image: referral.referred_user.image,
+                image_url: referral.referred_user.image_url,
                 joining_date: referral.referred_user.createdAt,
             }))
 
