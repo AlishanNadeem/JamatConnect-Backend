@@ -88,8 +88,8 @@ export const signup = async (req, res, next) => {
         user_saved = true
 
         await recordReferral({
-            referrer_user_id: referrer._id,
-            referred_user_id: user._id,
+            referrer_user: referrer._id,
+            referred_user: user._id,
             referral_code,
         })
 
