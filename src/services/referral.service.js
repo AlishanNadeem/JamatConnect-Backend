@@ -24,17 +24,17 @@ export const resolveReferralCode = async (input) => {
 
 }
 
-export const recordReferral = async ({ referrer_user_id, referred_user_id, referral_code }) => {
+export const recordReferral = async ({ referrer_user, referred_user, referral_code }) => {
 
-    const existing = await Referral.findOne({ referred_user_id })
+    const existing = await Referral.findOne({ referred_user })
 
     if (existing) {
         throw new Error('Referral record already exists for this user.')
     }
 
     const referral = new Referral({
-        referrer_user_id,
-        referred_user_id,
+        referrer_user,
+        referred_user,
         referral_code: normalizeCode(referral_code),
     })
 
