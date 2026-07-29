@@ -31,7 +31,7 @@ export const removeFiles = (files) => {
 
             if (!file || typeof file !== "string") continue
 
-            if (!file.includes("uploads/")) {
+            if (!file.includes("uploads")) {
                 logger.warn(`Skipped deleting file outside uploads folder: ${file}`)
                 continue
             }
