@@ -102,7 +102,6 @@ export const getBusinesses = async (req, res, next) => {
         if (status !== undefined) filter.status = status
 
         if (!decoded || decoded?.role === ROLES.USER) {
-            filter.status = BUSINESS_STATUS.APPROVED
             filter.active = true
         }
 
@@ -288,7 +287,7 @@ export const deleteBusiness = async (req, res, next) => {
         }
 
         if (!isBusinessOwner(business, decoded.id) && !isAdmin(decoded?.role)) {
-            return res.status(403).json({   
+            return res.status(403).json({
                 success: false,
                 message: 'Unauthorized.',
             })
