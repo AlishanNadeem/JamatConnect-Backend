@@ -116,8 +116,10 @@ export const getMediaUrl = (path) => {
 
     if (!path) return null
 
-    if (path.startsWith('http')) return path
+    const normalized_path = path.replace(/\\/g, '/')
 
-    return `${process.env.BASE_URL}${path}`
+    if (normalized_path.startsWith('http')) return normalized_path
+
+    return `${process.env.BASE_URL}${normalized_path}`
 
 }
