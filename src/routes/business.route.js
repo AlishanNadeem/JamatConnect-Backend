@@ -1,5 +1,5 @@
 import express from 'express'
-import { createBusiness, deleteBusiness, getBusinessById, getBusinesses, updateBusiness } from '../controllers/business.controller.js'
+import { createBusiness, deleteBusiness, getBusinessById, getBusinesses, getMyBusinesses, updateBusiness } from '../controllers/business.controller.js'
 import { CREATE_BUSINESS_VALIDATOR, UPDATE_BUSINESS_VALIDATOR } from '../helpers/validators.js'
 import { AuthVerifier, OptionalAuthVerifier, RestrictAccess } from '../middleware/auth.middleware.js'
 import upload from '../middleware/upload.middleware.js'
@@ -8,7 +8,9 @@ import { ROLES } from '../utils/index.js'
 
 const router = express.Router()
 
-router.get('/get', OptionalAuthVerifier, getBusinesses)
+router.get('/get', AuthVerifier, getBusinesses)
+
+router.get('/my', AuthVerifier, RestrictAccess([ROLES.USER]), getMyBusinesses)
 
 router.get('/get/:identifier', OptionalAuthVerifier, getBusinessById)
 

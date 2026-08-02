@@ -102,11 +102,21 @@ export const getBusinesses = async (req, res, next) => {
         if (status !== undefined) filter.status = status
 
         if (!decoded || decoded?.role === ROLES.USER) {
+            filter.status = BUSINESS_STATUS.APPROVED
             filter.active = true
         }
 
+        const business_query = Business.find(filter)
+            .select('name status active category logo createdAt')
+            .populate('category', 'name')
+            .sort({ featured: -1, createdAt: -1 })
+
+        if (skip !== null && limit !== null) {
+            business_query.skip(skip).limit(limit)
+        }
+
         const [businesses, total] = await Promise.all([
-            Business.find(filter).sort({ featured: -1, createdAt: -1 }).skip(skip).limit(limit).lean({ virtuals: true }),
+            business_query.lean({ virtuals: true }),
             Business.countDocuments(filter),
         ])
 
@@ -118,6 +128,46 @@ export const getBusinesses = async (req, res, next) => {
 
     } catch (error) {
         logger.error(`Get Businesses Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const getMyBusinesses = async (req, res, next) => {
+    try {
+
+        const { decoded, query } = req
+        const { category, search, active, status } = query
+        const { skip, limit, page, page_size } = getPagination(query)
+
+        const filter = { user: decoded.id }
+
+        if (category) filter.category = category
+        if (search) filter.name = searchRegex(search)
+        if (active !== undefined) filter.active = active
+        if (status !== undefined) filter.status = status
+
+        const business_query = Business.find(filter)
+            .select('name description status active category logo image verified country_code dialing_code phone email website address createdAt')
+            .populate('category', 'name')
+            .sort({ createdAt: -1 })
+
+        if (skip !== null && limit !== null) {
+            business_query.skip(skip).limit(limit)
+        }
+
+        const [businesses, total] = await Promise.all([
+            business_query.lean({ virtuals: true }),
+            Business.countDocuments(filter),
+        ])
+
+        return res.status(200).json({
+            success: true,
+            message: 'My businesses fetched successfully.',
+            ...buildPaginationResponse(businesses, total, page, page_size),
+        })
+
+    } catch (error) {
+        logger.error(`Get My Businesses Error: ${error.message}`)
         next(error)
     }
 }
