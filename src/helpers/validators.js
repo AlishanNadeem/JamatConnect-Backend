@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
+import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_MARKETPLACE_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
 
 export const SIGNUP_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
@@ -356,4 +356,52 @@ export const UPDATE_BUSINESS_VALIDATOR = Joi.object({
     featured: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     rejection_reason: Joi.string().allow(null, '').optional(),
+})
+
+export const CREATE_MARKETPLACE_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Listing name is required.',
+        'string.empty': 'Listing name cannot be empty.',
+        'string.min': 'Listing name must be at least 2 characters long.',
+        'string.max': 'Listing name cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).required().messages({
+        'any.required': 'Description is required.',
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    category: Joi.string().required().messages({
+        'any.required': 'Product category is required.',
+        'string.empty': 'Product category cannot be empty.',
+    }),
+    price: Joi.number().min(0).required().messages({
+        'any.required': 'Price is required.',
+        'number.base': 'Price must be a number.',
+        'number.min': 'Price cannot be negative.',
+    }),
+})
+
+export const UPDATE_MARKETPLACE_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Listing name cannot be empty.',
+        'string.min': 'Listing name must be at least 2 characters long.',
+        'string.max': 'Listing name cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).optional().messages({
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    category: Joi.string().optional().messages({
+        'string.empty': 'Product category cannot be empty.',
+    }),
+    price: Joi.number().min(0).optional().messages({
+        'number.base': 'Price must be a number.',
+        'number.min': 'Price cannot be negative.',
+    }),
+    status: Joi.string().valid(...ENUM_MARKETPLACE_STATUS).optional().messages({
+        'any.only': `Status must be one of: ${ENUM_MARKETPLACE_STATUS.join(', ')}`,
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
 })

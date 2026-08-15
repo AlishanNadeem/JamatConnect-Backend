@@ -112,6 +112,23 @@ export const BUSINESS_DAYS = {
 
 export const ENUM_BUSINESS_DAYS = Object.values(BUSINESS_DAYS)
 
+export const MARKETPLACE_STATUS = {
+    ACTIVE: "active",
+    EXPIRED: "expired",
+    SOLD: "sold",
+}
+
+export const ENUM_MARKETPLACE_STATUS = Object.values(MARKETPLACE_STATUS)
+
+export const MARKETPLACE_LISTING_DAYS = 30
+
+export const getMarketplaceExpiryDate = () => {
+    const expires_at = new Date()
+    expires_at.setDate(expires_at.getDate() + MARKETPLACE_LISTING_DAYS)
+    expires_at.setHours(0, 0, 0, 0)
+    return expires_at
+}
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
