@@ -12,7 +12,7 @@ router.get('/get', AuthVerifier, getBusinesses)
 
 router.get('/my', AuthVerifier, RestrictAccess([ROLES.USER]), getMyBusinesses)
 
-router.get('/get/:identifier', OptionalAuthVerifier, getBusinessById)
+router.get('/get/:id', OptionalAuthVerifier, getBusinessById)
 
 router.post('/create', AuthVerifier, RestrictAccess([ROLES.USER]), upload('business').fields([{ name: 'logo', maxCount: 1 }, { name: 'image', maxCount: 1 }]), validator(CREATE_BUSINESS_VALIDATOR), createBusiness)
 

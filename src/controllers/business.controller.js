@@ -102,12 +102,18 @@ export const getBusinesses = async (req, res, next) => {
         if (status !== undefined) filter.status = status
 
         if (!decoded || decoded?.role === ROLES.USER) {
+
+            if (decoded?.id) {
+                filter.user = decoded.id
+            }
+
             filter.status = BUSINESS_STATUS.APPROVED
             filter.active = true
+
         }
 
         const business_query = Business.find(filter)
-            .select('name status active category logo createdAt')
+            .select('name category logo address verified')
             .populate('category', 'name')
             .sort({ featured: -1, createdAt: -1 })
 
@@ -176,9 +182,9 @@ export const getBusinessById = async (req, res, next) => {
     try {
 
         const { decoded, params } = req
-        const { identifier } = params
+        const { id } = params
 
-        const business = await getBusinessByIdentifier(identifier)
+        const business = await getBusinessByIdentifier(id)
 
         if (!business) {
             return res.status(404).json({
