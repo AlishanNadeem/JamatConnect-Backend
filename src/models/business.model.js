@@ -80,7 +80,7 @@ const business_schema = mongoose.Schema({
     status: {
         type: String,
         enum: ENUM_BUSINESS_STATUS,
-        default: BUSINESS_STATUS.PENDING,
+        default: BUSINESS_STATUS.APPROVED,
     },
     active: {
         type: Boolean,
