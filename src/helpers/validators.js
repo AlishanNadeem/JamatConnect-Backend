@@ -199,6 +199,21 @@ export const UPDATE_BUSINESS_CATEGORY_VALIDATOR = Joi.object({
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
 })
 
+export const CREATE_PRODUCT_CATEGORY_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Name is required.',
+        'string.empty': 'Name cannot be empty.',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').default(true),
+})
+
+export const UPDATE_PRODUCT_CATEGORY_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Name cannot be empty.',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+})
+
 const ADDRESS_VALIDATOR = Joi.object({
     formatted: Joi.string().required().messages({
         'any.required': 'Formatted address is required.',
