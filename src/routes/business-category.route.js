@@ -9,9 +9,13 @@ import { ROLES } from '../utils/index.js'
 const router = express.Router()
 
 router.get('/get', OptionalAuthVerifier, getBusinessCategories)
+
 router.get('/get/:id', OptionalAuthVerifier, getBusinessCategoryById)
+
 router.post('/create', AuthVerifier, RestrictAccess([ROLES.ADMIN]), upload('business-category').single('image'), validator(CREATE_BUSINESS_CATEGORY_VALIDATOR), createBusinessCategory)
+
 router.patch('/update/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), upload('business-category').single('image'), validator(UPDATE_BUSINESS_CATEGORY_VALIDATOR, { optional: true }), updateBusinessCategory)
+
 router.delete('/delete/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), deleteBusinessCategory)
 
 export default router
