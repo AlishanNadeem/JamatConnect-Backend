@@ -58,6 +58,19 @@ marketplace_schema.virtual('image_url').get(function () {
     return getMediaUrl(this.image)
 })
 
+marketplace_schema.virtual('formatted_price').get(function () {
+
+    if (this.price === null || this.price === undefined) return null
+
+    return new Intl.NumberFormat('en-AU', {
+        style: 'currency',
+        currency: 'AUD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }).format(this.price)
+
+})
+
 marketplace_schema.index({ user: 1, createdAt: -1 })
 marketplace_schema.index({ category: 1, status: 1, active: 1 })
 marketplace_schema.index({ status: 1, active: 1, expires_at: 1, createdAt: -1 })
