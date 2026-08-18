@@ -73,6 +73,31 @@ export const getProductCategories = async (req, res, next) => {
     }
 }
 
+export const getProductCategoryLov = async (req, res, next) => {
+    try {
+
+        const categories = await ProductCategory.find({ active: true })
+            .select('name')
+            .sort({ name: 1 })
+            .lean()
+
+        const data = categories.map((category) => ({
+            label: category.name,
+            value: category._id,
+        }))
+
+        return res.status(200).json({
+            success: true,
+            message: 'Product category list fetched successfully.',
+            data,
+        })
+
+    } catch (error) {
+        logger.error(`Get Product Category LOV Error: ${error.message}`)
+        next(error)
+    }
+}
+
 export const getProductCategoryById = async (req, res, next) => {
     try {
 
