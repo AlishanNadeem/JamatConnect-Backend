@@ -4,7 +4,7 @@ import { buildPaginationResponse, getPagination } from '../helpers/pagination.js
 import Marketplace from '../models/marketplace.model.js'
 import ProductCategory from '../models/product-category.model.js'
 import { expireMarketplaceListings, isMarketplaceOwner } from '../services/marketplace.service.js'
-import { isAdmin, MARKETPLACE_STATUS, ROLES, searchRegex } from '../utils/index.js'
+import { getMarketplaceExpiryDate, isAdmin, ROLES, searchRegex } from '../utils/index.js'
 
 export const createMarketplace = async (req, res, next) => {
 
@@ -78,7 +78,7 @@ export const getMarketplaces = async (req, res, next) => {
         const { skip, limit, page, page_size } = getPagination(query)
 
         const filter = {
-            status: MARKETPLACE_STATUS.ACTIVE,
+            is_expired: false,
             active: true,
             expires_at: { $gt: new Date() },
         }
@@ -122,17 +122,17 @@ export const getMyMarketplaces = async (req, res, next) => {
         await expireMarketplaceListings()
 
         const { decoded, query } = req
-        const { category, search, status } = query
+        const { category, search, is_expired } = query
         const { skip, limit, page, page_size } = getPagination(query)
 
         const filter = { user: decoded.id }
 
         if (category) filter.category = category
         if (search) filter.name = searchRegex(search)
-        if (status !== undefined) filter.status = status
+        if (is_expired !== undefined) filter.is_expired = is_expired
 
         const listing_query = Marketplace.find(filter)
-            .select('name description price category image status expires_at createdAt')
+            .select('name description price category image active is_expired expires_at')
             .populate('category', 'name')
             .sort({ createdAt: -1 })
 
@@ -166,7 +166,7 @@ export const getMarketplaceById = async (req, res, next) => {
         const { id } = params
 
         const listing = await Marketplace.findById(id)
-            .populate('category', 'name')
+            .populate([{ path: 'category', select: 'name' }, { path: 'user', select: 'name email image phone' }])
             .lean({ virtuals: true })
 
         if (!listing) {
@@ -176,9 +176,9 @@ export const getMarketplaceById = async (req, res, next) => {
             })
         }
 
-        const is_owner = decoded?.id && listing.user.toString() === decoded.id
+        const is_owner = decoded?.id && listing.user?._id?.toString() === decoded.id
         const is_admin = isAdmin(decoded?.role)
-        const is_public = listing.status === MARKETPLACE_STATUS.ACTIVE && listing.active && listing.expires_at > new Date()
+        const is_public = !listing.is_expired && listing.active && listing.expires_at > new Date()
 
         if (!is_owner && !is_admin && !is_public) {
             return res.status(404).json({
@@ -234,7 +234,7 @@ export const updateMarketplace = async (req, res, next) => {
             description,
             category,
             price,
-            status,
+            is_expired,
             active,
         } = body
 
@@ -263,12 +263,8 @@ export const updateMarketplace = async (req, res, next) => {
             updated_fields.image = uploaded_image
         }
 
-        if (status === MARKETPLACE_STATUS.SOLD) {
-            updated_fields.status = MARKETPLACE_STATUS.SOLD
-        }
-
         if (isAdmin(decoded?.role)) {
-            if (status !== undefined) updated_fields.status = status
+            if (is_expired !== undefined) updated_fields.is_expired = is_expired
             if (active !== undefined) updated_fields.active = active
         }
 
@@ -289,6 +285,92 @@ export const updateMarketplace = async (req, res, next) => {
     } catch (error) {
         cleanupUploadedImage()
         logger.error(`Update Marketplace Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const renewMarketplace = async (req, res, next) => {
+    try {
+
+        const { params, decoded } = req
+        const { id } = params
+
+        const listing = await Marketplace.findById(id)
+
+        if (!listing) {
+            return res.status(404).json({
+                success: false,
+                message: 'Marketplace listing not found.',
+            })
+        }
+
+        if (!isMarketplaceOwner(listing, decoded.id) && !isAdmin(decoded?.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized.',
+            })
+        }
+
+        if (!listing.is_expired) {
+            return res.status(400).json({
+                success: false,
+                message: 'Listing is not expired.',
+            })
+        }
+
+        listing.expires_at = getMarketplaceExpiryDate()
+        listing.is_expired = false
+        await listing.save()
+
+        logger.info(`Marketplace listing renewed: ${listing.name}`)
+
+        return res.status(200).json({
+            success: true,
+            message: 'Marketplace listing renewed successfully.',
+            data: listing.toObject({ virtuals: true }),
+        })
+
+    } catch (error) {
+        logger.error(`Renew Marketplace Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const toggleMarketplaceActive = async (req, res, next) => {
+    try {
+
+        const { params, decoded } = req
+        const { id } = params
+
+        const listing = await Marketplace.findById(id)
+
+        if (!listing) {
+            return res.status(404).json({
+                success: false,
+                message: 'Marketplace listing not found.',
+            })
+        }
+
+        if (!isMarketplaceOwner(listing, decoded.id) && !isAdmin(decoded?.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized.',
+            })
+        }
+
+        listing.active = !listing.active
+        await listing.save()
+
+        logger.info(`Marketplace listing active toggled: ${listing.name} (${listing.active})`)
+
+        return res.status(200).json({
+            success: true,
+            message: listing.active ? 'Marketplace listing activated successfully.' : 'Marketplace listing deactivated successfully.',
+            data: listing.toObject({ virtuals: true }),
+        })
+
+    } catch (error) {
+        logger.error(`Toggle Marketplace Active Error: ${error.message}`)
         next(error)
     }
 }
