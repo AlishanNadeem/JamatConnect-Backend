@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import mongooseLeanVirtuals from 'mongoose-lean-virtuals'
-import { ENUM_MARKETPLACE_STATUS, getMarketplaceExpiryDate, getMediaUrl, MARKETPLACE_STATUS } from '../utils/index.js'
+import { getMarketplaceExpiryDate, getMediaUrl } from '../utils/index.js'
 
 const marketplace_schema = mongoose.Schema({
     user: {
@@ -33,10 +33,9 @@ const marketplace_schema = mongoose.Schema({
         required: true,
         trim: true,
     },
-    status: {
-        type: String,
-        enum: ENUM_MARKETPLACE_STATUS,
-        default: MARKETPLACE_STATUS.ACTIVE,
+    is_expired: {
+        type: Boolean,
+        default: false,
     },
     active: {
         type: Boolean,
@@ -72,8 +71,8 @@ marketplace_schema.virtual('formatted_price').get(function () {
 })
 
 marketplace_schema.index({ user: 1, createdAt: -1 })
-marketplace_schema.index({ category: 1, status: 1, active: 1 })
-marketplace_schema.index({ status: 1, active: 1, expires_at: 1, createdAt: -1 })
+marketplace_schema.index({ category: 1, is_expired: 1, active: 1 })
+marketplace_schema.index({ is_expired: 1, active: 1, expires_at: 1, createdAt: -1 })
 marketplace_schema.index({ name: 'text', description: 'text' })
 
 marketplace_schema.plugin(mongooseLeanVirtuals)
