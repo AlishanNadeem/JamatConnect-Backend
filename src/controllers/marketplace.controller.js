@@ -3,7 +3,7 @@ import { removeFiles } from '../helpers/folder.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import Marketplace from '../models/marketplace.model.js'
 import ProductCategory from '../models/product-category.model.js'
-import { expireMarketplaceListings, isMarketplaceOwner } from '../services/marketplace.service.js'
+import { isMarketplaceOwner } from '../services/marketplace.service.js'
 import { getMarketplaceExpiryDate, isAdmin, ROLES, searchRegex } from '../utils/index.js'
 
 export const createMarketplace = async (req, res, next) => {
@@ -71,8 +71,6 @@ export const createMarketplace = async (req, res, next) => {
 export const getMarketplaces = async (req, res, next) => {
     try {
 
-        await expireMarketplaceListings()
-
         const { decoded, query } = req
         const { category, search } = query
         const { skip, limit, page, page_size } = getPagination(query)
@@ -119,8 +117,6 @@ export const getMarketplaces = async (req, res, next) => {
 export const getMyMarketplaces = async (req, res, next) => {
     try {
 
-        await expireMarketplaceListings()
-
         const { decoded, query } = req
         const { category, search, is_expired } = query
         const { skip, limit, page, page_size } = getPagination(query)
@@ -159,8 +155,6 @@ export const getMyMarketplaces = async (req, res, next) => {
 
 export const getMarketplaceById = async (req, res, next) => {
     try {
-
-        await expireMarketplaceListings()
 
         const { decoded, params } = req
         const { id } = params
