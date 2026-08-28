@@ -239,6 +239,7 @@ export const updateMarketplace = async (req, res, next) => {
         if (price !== undefined) updated_fields.price = price
 
         if (category !== undefined) {
+            
             const category_exists = await ProductCategory.findOne({ _id: category, active: true })
 
             if (!category_exists) {
@@ -250,6 +251,7 @@ export const updateMarketplace = async (req, res, next) => {
             }
 
             updated_fields.category = category
+
         }
 
         if (uploaded_image) {

@@ -102,14 +102,14 @@ export const getBusinesses = async (req, res, next) => {
         if (status !== undefined) filter.status = status
 
         if (!decoded || decoded?.role === ROLES.USER) {
-
-            if (decoded?.id) {
-                filter.user = decoded.id
-            }
-
             filter.status = BUSINESS_STATUS.APPROVED
             filter.active = true
+        }
 
+        if (decoded?.role === ROLES.USER) {
+            filter.user = {
+                $ne: decoded.id
+            }
         }
 
         const business_query = Business.find(filter)

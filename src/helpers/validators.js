@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_MARKETPLACE_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
+import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
 
 export const SIGNUP_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
@@ -400,8 +400,6 @@ export const UPDATE_MARKETPLACE_VALIDATOR = Joi.object({
         'number.base': 'Price must be a number.',
         'number.min': 'Price cannot be negative.',
     }),
-    status: Joi.string().valid(...ENUM_MARKETPLACE_STATUS).optional().messages({
-        'any.only': `Status must be one of: ${ENUM_MARKETPLACE_STATUS.join(', ')}`,
-    }),
+    is_expired: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
 })
