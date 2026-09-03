@@ -121,6 +121,42 @@ export const getMarketplaceExpiryDate = () => {
     return expires_at
 }
 
+export const EMPLOYMENT_TYPES = {
+    FULL_TIME: "full_time",
+    PART_TIME: "part_time",
+    CASUAL: "casual",
+    CONTRACT: "contract",
+    TEMPORARY: "temporary",
+    INTERNSHIP: "internship",
+    VOLUNTEER: "volunteer",
+}
+
+export const ENUM_EMPLOYMENT_TYPES = Object.values(EMPLOYMENT_TYPES)
+
+export const EMPLOYMENT_TYPE_OPTIONS = [
+    { label: "Full-time", value: EMPLOYMENT_TYPES.FULL_TIME },
+    { label: "Part-time", value: EMPLOYMENT_TYPES.PART_TIME },
+    { label: "Casual", value: EMPLOYMENT_TYPES.CASUAL },
+    { label: "Contract", value: EMPLOYMENT_TYPES.CONTRACT },
+    { label: "Temporary", value: EMPLOYMENT_TYPES.TEMPORARY },
+    { label: "Internship", value: EMPLOYMENT_TYPES.INTERNSHIP },
+    { label: "Volunteer", value: EMPLOYMENT_TYPES.VOLUNTEER },
+]
+
+export const WORKPLACE_TYPES = {
+    ONSITE: "onsite",
+    REMOTE: "remote",
+    HYBRID: "hybrid",
+}
+
+export const ENUM_WORKPLACE_TYPES = Object.values(WORKPLACE_TYPES)
+
+export const WORKPLACE_TYPE_OPTIONS = [
+    { label: "On-site", value: WORKPLACE_TYPES.ONSITE },
+    { label: "Remote", value: WORKPLACE_TYPES.REMOTE },
+    { label: "Hybrid", value: WORKPLACE_TYPES.HYBRID },
+]
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
