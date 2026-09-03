@@ -3,6 +3,7 @@ import app from './src/app.js'
 import connectDB from './src/config/db.js'
 import logger from './src/config/logger.js'
 import { makeFolders } from './src/helpers/folder.js'
+import { startMarketplaceExpiryJob } from './src/jobs/marketplace-expiry.job.js'
 
 dotenv.config()
 
@@ -15,6 +16,7 @@ const serverHandler = async () => {
 
         await connectDB()
         makeFolders()
+        startMarketplaceExpiryJob()
 
     } catch (e) {
         logger.error("Error while connecting server :: ", e)
