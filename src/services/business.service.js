@@ -29,6 +29,8 @@ export const getBusinessByIdentifier = async (identifier, { lean = true } = {}) 
         ? Business.findById(identifier)
         : Business.findOne({ slug: identifier })
 
+    query.populate('category', 'name')
+
     if (lean) {
         return query.lean({ virtuals: true })
     }
