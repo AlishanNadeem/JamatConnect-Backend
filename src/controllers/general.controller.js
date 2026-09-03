@@ -2,7 +2,7 @@ import dotenv from "dotenv"
 import fs from 'fs/promises'
 import path from 'path'
 import logger from '../config/logger.js'
-import { ENUM_GENDERS } from '../utils/index.js'
+import { EMPLOYMENT_TYPE_OPTIONS, WORKPLACE_TYPE_OPTIONS } from '../utils/index.js'
 
 dotenv.config()
 
@@ -60,7 +60,8 @@ export const getData = async (req, res, next) => {
     try {
 
         const data = {
-            genders: ENUM_GENDERS
+            employment_types: EMPLOYMENT_TYPE_OPTIONS,
+            workplace_types: WORKPLACE_TYPE_OPTIONS,
         }
 
         return res.status(200).json({
