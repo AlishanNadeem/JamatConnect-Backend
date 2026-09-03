@@ -11,6 +11,7 @@ import business_routes from './business.route.js'
 import referral_routes from './referral.route.js'
 import product_category_routes from './product-category.route.js'
 import marketplace_routes from './marketplace.route.js'
+import job_routes from './job.route.js'
 
 router.use('/auth', auth_routes)
 router.use('/user', user_routes)
@@ -21,5 +22,6 @@ router.use('/business', business_routes)
 router.use('/referral', referral_routes)
 router.use('/product-category', product_category_routes)
 router.use('/marketplace', marketplace_routes)
+router.use('/job', job_routes)
 
 export default router

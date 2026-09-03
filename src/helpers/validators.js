@@ -1,5 +1,5 @@
 import Joi from 'joi'
-import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_ROLES, ROLES } from '../utils/index.js'
+import { AUTH_TYPES, ENUM_BUSINESS_DAYS, ENUM_BUSINESS_STATUS, ENUM_EMPLOYMENT_TYPES, ENUM_ROLES, ENUM_WORKPLACE_TYPES, ROLES } from '../utils/index.js'
 
 export const SIGNUP_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
@@ -402,4 +402,59 @@ export const UPDATE_MARKETPLACE_VALIDATOR = Joi.object({
     }),
     is_expired: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
     active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+})
+
+export const CREATE_JOB_VALIDATOR = Joi.object({
+    business: Joi.string().required().messages({
+        'any.required': 'Business is required.',
+        'string.empty': 'Business cannot be empty.',
+    }),
+    title: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Job title is required.',
+        'string.empty': 'Job title cannot be empty.',
+        'string.min': 'Job title must be at least 2 characters long.',
+        'string.max': 'Job title cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).required().messages({
+        'any.required': 'Description is required.',
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    employment_type: Joi.string().valid(...ENUM_EMPLOYMENT_TYPES).required().messages({
+        'any.only': `Employment type must be one of: ${ENUM_EMPLOYMENT_TYPES.join(', ')}`,
+        'any.required': 'Employment type is required.',
+    }),
+    workplace_type: Joi.string().valid(...ENUM_WORKPLACE_TYPES).required().messages({
+        'any.only': `Workplace type must be one of: ${ENUM_WORKPLACE_TYPES.join(', ')}`,
+        'any.required': 'Workplace type is required.',
+    }),
+    location: Joi.string().min(2).max(150).required().messages({
+        'any.required': 'Location is required.',
+        'string.empty': 'Location cannot be empty.',
+    }),
+})
+
+export const UPDATE_JOB_VALIDATOR = Joi.object({
+    title: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Job title cannot be empty.',
+        'string.min': 'Job title must be at least 2 characters long.',
+        'string.max': 'Job title cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).optional().messages({
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    employment_type: Joi.string().valid(...ENUM_EMPLOYMENT_TYPES).optional().messages({
+        'any.only': `Employment type must be one of: ${ENUM_EMPLOYMENT_TYPES.join(', ')}`,
+    }),
+    workplace_type: Joi.string().valid(...ENUM_WORKPLACE_TYPES).optional().messages({
+        'any.only': `Workplace type must be one of: ${ENUM_WORKPLACE_TYPES.join(', ')}`,
+    }),
+    location: Joi.string().min(2).max(150).optional().messages({
+        'string.empty': 'Location cannot be empty.',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+    closed: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
 })
