@@ -1,13 +1,13 @@
 import express from 'express'
 import {
     applyToJob,
+    closeJob,
     createJob,
     deleteJob,
     getJobApplications,
     getJobById,
     getJobs,
     getMyJobs,
-    toggleJobActive,
     updateJob,
 } from '../controllers/job.controller.js'
 import { CREATE_JOB_VALIDATOR, UPDATE_JOB_VALIDATOR } from '../helpers/validators.js'
@@ -31,7 +31,7 @@ router.post('/apply/:id', AuthVerifier, RestrictAccess([ROLES.USER]), applyToJob
 
 router.patch('/update/:id', AuthVerifier, validator(UPDATE_JOB_VALIDATOR, { optional: true }), updateJob)
 
-router.patch('/toggle-active/:id', AuthVerifier, toggleJobActive)
+router.patch('/close/:id', AuthVerifier, closeJob)
 
 router.delete('/delete/:id', AuthVerifier, deleteJob)
 

@@ -455,6 +455,4 @@ export const UPDATE_JOB_VALIDATOR = Joi.object({
     location: Joi.string().min(2).max(150).optional().messages({
         'string.empty': 'Location cannot be empty.',
     }),
-    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
-    closed: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
 })

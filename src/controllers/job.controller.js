@@ -70,7 +70,6 @@ export const getJobs = async (req, res, next) => {
         const { skip, limit, page, page_size } = getPagination(query)
 
         const filter = {
-            active: true,
             closed: false,
         }
 
@@ -142,7 +141,7 @@ export const getMyJobs = async (req, res, next) => {
     try {
 
         const { decoded, query } = req
-        const { business, employment_type, workplace_type, active, closed, search } = query
+        const { business, employment_type, workplace_type, closed, search } = query
         const { skip, limit, page, page_size } = getPagination(query)
 
         const owned_business_ids = await Business.find({ user: decoded.id }).distinct('_id')
@@ -164,12 +163,11 @@ export const getMyJobs = async (req, res, next) => {
 
         if (employment_type) filter.employment_type = employment_type
         if (workplace_type) filter.workplace_type = workplace_type
-        if (active !== undefined) filter.active = active
         if (closed !== undefined) filter.closed = closed
         if (search) filter.title = searchRegex(search)
 
         const job_query = Job.find(filter)
-            .select('title description employment_type workplace_type location business active closed createdAt')
+            .select('title description employment_type workplace_type location business closed createdAt')
             .populate('business', 'name logo')
             .sort({ createdAt: -1 })
 
@@ -221,7 +219,7 @@ export const getJobById = async (req, res, next) => {
 
         const is_owner = decoded?.id && job.business?.user?.toString() === decoded.id
         const is_admin = isAdmin(decoded?.role)
-        const is_public = job.active && !job.closed && job.business?.status === BUSINESS_STATUS.APPROVED && job.business?.active
+        const is_public = !job.closed && job.business?.status === BUSINESS_STATUS.APPROVED && job.business?.active
 
         if (!is_owner && !is_admin && !is_public) {
             return res.status(404).json({
@@ -241,7 +239,6 @@ export const getJobById = async (req, res, next) => {
 
             similar_jobs = await Job.find({
                 _id: { $ne: job._id },
-                active: true,
                 closed: false,
                 business: { $in: approved_business_ids },
                 $or: [
@@ -321,8 +318,6 @@ export const updateJob = async (req, res, next) => {
             employment_type,
             workplace_type,
             location,
-            active,
-            closed,
         } = body
 
         const updated_fields = {}
@@ -332,8 +327,6 @@ export const updateJob = async (req, res, next) => {
         if (employment_type !== undefined) updated_fields.employment_type = employment_type
         if (workplace_type !== undefined) updated_fields.workplace_type = workplace_type
         if (location !== undefined) updated_fields.location = location
-        if (active !== undefined) updated_fields.active = active
-        if (closed !== undefined) updated_fields.closed = closed
 
         const updated_job = await Job.findByIdAndUpdate(
             id,
@@ -355,7 +348,7 @@ export const updateJob = async (req, res, next) => {
     }
 }
 
-export const toggleJobActive = async (req, res, next) => {
+export const closeJob = async (req, res, next) => {
     try {
 
         const { params, decoded } = req
@@ -377,20 +370,20 @@ export const toggleJobActive = async (req, res, next) => {
             })
         }
 
-        job.active = !job.active
+        job.closed = !job.closed
         await job.save()
         job.depopulate('business')
 
-        logger.info(`Job active toggled: ${job.title} (${job.active})`)
+        logger.info(`Job closed toggled: ${job.title} (${job.closed})`)
 
         return res.status(200).json({
             success: true,
-            message: job.active ? 'Job activated successfully.' : 'Job deactivated successfully.',
+            message: job.closed ? 'Job closed successfully.' : 'Job reopened successfully.',
             data: job.toObject(),
         })
 
     } catch (error) {
-        logger.error(`Toggle Job Active Error: ${error.message}`)
+        logger.error(`Close Job Error: ${error.message}`)
         next(error)
     }
 }
@@ -450,7 +443,7 @@ export const applyToJob = async (req, res, next) => {
             })
         }
 
-        if (!job.active || job.closed) {
+        if (job.closed) {
             return res.status(400).json({
                 success: false,
                 message: 'This job is not accepting applications.',
@@ -531,9 +524,9 @@ export const getJobApplications = async (req, res, next) => {
 
         const applications = await JobApplication.find({ job: id })
             .select('applicant createdAt')
-            .populate('applicant', 'name')
+            .populate('applicant', 'name image')
             .sort({ createdAt: -1 })
-            .lean()
+            .lean({ virtuals: true })
 
         return res.status(200).json({
             success: true,

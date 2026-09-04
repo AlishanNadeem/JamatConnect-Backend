@@ -32,10 +32,6 @@ const job_schema = mongoose.Schema({
         required: true,
         trim: true,
     },
-    active: {
-        type: Boolean,
-        default: true,
-    },
     closed: {
         type: Boolean,
         default: false,
@@ -46,7 +42,7 @@ const job_schema = mongoose.Schema({
 })
 
 job_schema.index({ business: 1, createdAt: -1 })
-job_schema.index({ employment_type: 1, workplace_type: 1, active: 1, closed: 1 })
+job_schema.index({ employment_type: 1, workplace_type: 1, closed: 1 })
 job_schema.index({ title: 'text', description: 'text' })
 
 const Job = mongoose.model('Job', job_schema)
