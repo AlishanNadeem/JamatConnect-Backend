@@ -27,7 +27,7 @@ export const getMyReferredUsers = async (req, res, next) => {
                 email: referral.referred_user.email,
                 image: referral.referred_user.image,
                 image_url: referral.referred_user.image_url,
-                joining_date: referral.referred_user.createdAt,
+                date: referral.referred_user.createdAt,
             }))
 
         return res.status(200).json({
