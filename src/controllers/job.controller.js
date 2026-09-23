@@ -77,7 +77,19 @@ export const getJobs = async (req, res, next) => {
         if (workplace_type) filter.workplace_type = workplace_type
         if (search) filter.title = searchRegex(search)
 
+        const owned_business_ids = await Business.find({ user: decoded.id }).distinct('_id')
+
         if (business) {
+
+            const is_own_business = owned_business_ids.some((owned_id) => owned_id.toString() === business)
+
+            if (is_own_business) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Jobs fetched successfully.',
+                    ...buildPaginationResponse([], 0, page, page_size),
+                })
+            }
 
             const business_exists = await Business.exists({ _id: business, status: BUSINESS_STATUS.APPROVED, active: true })
 
@@ -92,8 +104,14 @@ export const getJobs = async (req, res, next) => {
             filter.business = business
 
         } else {
-            const approved_business_ids = await Business.find({ status: BUSINESS_STATUS.APPROVED, active: true }).distinct('_id')
+
+            const approved_business_ids = await Business.find({
+                status: BUSINESS_STATUS.APPROVED,
+                active: true,
+                _id: { $nin: owned_business_ids },
+            }).distinct('_id')
             filter.business = { $in: approved_business_ids }
+
         }
 
         const job_query = Job.find(filter)
