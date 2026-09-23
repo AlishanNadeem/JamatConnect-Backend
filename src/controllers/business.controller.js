@@ -3,6 +3,7 @@ import { removeFiles } from '../helpers/folder.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import Business from '../models/business.model.js'
 import BusinessCategory from '../models/business-category.model.js'
+import Job from '../models/job.model.js'
 import { generateSlug, getBusinessByIdentifier, isBusinessOwner } from '../services/business.service.js'
 import { BUSINESS_STATUS, isAdmin, ROLES, searchRegex } from '../utils/index.js'
 
@@ -181,8 +182,9 @@ export const getMyBusinesses = async (req, res, next) => {
 export const getBusinessById = async (req, res, next) => {
     try {
 
-        const { decoded, params } = req
+        const { decoded, params, query } = req
         const { id } = params
+        const include_jobs = String(query.jobs).toLowerCase() === 'true'
 
         const business = await getBusinessByIdentifier(id)
 
@@ -193,17 +195,39 @@ export const getBusinessById = async (req, res, next) => {
             })
         }
 
-        if ((!decoded || decoded?.role === ROLES.USER) && (business.status !== BUSINESS_STATUS.APPROVED || !business.active)) {
+        const is_owner = decoded?.id && isBusinessOwner(business, decoded.id)
+        const is_admin = isAdmin(decoded?.role)
+
+        if ((!decoded || decoded?.role === ROLES.USER) && !is_owner && (business.status !== BUSINESS_STATUS.APPROVED || !business.active)) {
             return res.status(404).json({
                 success: false,
                 message: 'Business not found.',
             })
         }
 
+        const response_data = { ...business }
+
+        if (include_jobs) {
+
+            const job_filter = { business: business._id }
+
+            if (!is_owner && !is_admin) {
+                job_filter.closed = false
+            }
+
+            response_data.jobs = await Job.find(job_filter)
+                .select('title description employment_type workplace_type location business closed createdAt')
+                .populate('business', 'name logo')
+                .sort({ createdAt: -1 })
+                .limit(3)
+                .lean({ virtuals: true })
+
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Business fetched successfully.',
-            data: business,
+            data: response_data,
         })
 
     } catch (error) {
