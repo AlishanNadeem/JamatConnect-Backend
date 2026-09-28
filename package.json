@@ -8,7 +8,8 @@
     "dev": "nodemon server.js",
     "start": "node server.js",
     "seed:users": "node src/seeders/user.seeder.js",
-    "seed:business-categories": "node src/seeders/business-category.seeder.js"
+    "seed:business-categories": "node src/seeders/business-category.seeder.js",
+    "seed:product-categories": "node src/seeders/product-category.seeder.js"
   },
   "keywords": [],
   "author": "",
@@ -27,6 +28,7 @@
     "mongoose-lean-virtuals": "^2.0.1",
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
+    "node-cron": "^4.6.0",
     "nodemailer": "^8.0.5",
     "winston": "^3.18.3"
   },
