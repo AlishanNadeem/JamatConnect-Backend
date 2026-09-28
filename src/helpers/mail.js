@@ -44,7 +44,7 @@ export const sendMail = async ({
         }
 
         const info = await transporter.sendMail({
-            from: `"No Reply" <${process.env.SMTP_USER}>`,
+            from: `"Jamat Connect" <${process.env.SMTP_USER}>`,
             to,
             subject,
             text: text || html.replace(/<[^>]+>/g, ""),
