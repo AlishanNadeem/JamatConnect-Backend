@@ -93,6 +93,18 @@ export const signup = async (req, res, next) => {
             referral_code,
         })
 
+        await sendMail({
+            to: user.email,
+            subject: 'Welcome to Jamat Connect',
+            template: 'onboarding',
+            template_vars: {
+                name: user.name,
+                email: user.email,
+                app_name: 'Jamat Connect',
+                logo_url: `${process.env.BASE_URL}uploads/logo.png`,
+            },
+        })
+
         const token = await generateToken({
             id: user._id,
             email: user.email,
