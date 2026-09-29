@@ -380,12 +380,12 @@ export const forgetPassword = async (req, res, next) => {
 
         await sendMail({
             to: user.email,
-            subject: "Password Reset Request – JamatConnect",
+            subject: "Password Reset Request – Jamat Connect",
             template: "password_reset_code",
             template_vars: {
                 name: user.name,
                 verification_code: otp,
-                app_name: "JamatConnect",
+                app_name: "Jamat Connect",
                 logo_url: `${process.env.BASE_URL}uploads/logo.png`
             }
         })
