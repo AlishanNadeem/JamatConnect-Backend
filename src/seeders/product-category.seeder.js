@@ -6,20 +6,20 @@ import ProductCategory from '../models/product-category.model.js'
 dotenv.config()
 
 const categories = [
-    { name: 'Clothing' },
-    { name: 'Food & Groceries' },
-    { name: 'Electronics' },
-    { name: 'Home & Kitchen' },
-    { name: 'Beauty & Personal Care' },
-    { name: 'Health & Wellness' },
-    { name: 'Books & Stationery' },
-    { name: 'Toys & Kids' },
-    { name: 'Sports & Fitness' },
-    { name: 'Jewelry & Accessories' },
-    { name: 'Handmade & Crafts' },
-    { name: 'Gifts' },
     { name: 'Automotive' },
+    { name: 'Beauty & Personal Care' },
+    { name: 'Books & Stationery' },
+    { name: 'Clothing' },
+    { name: 'Electronics' },
+    { name: 'Food & Groceries' },
+    { name: 'Gifts' },
+    { name: 'Handmade & Crafts' },
+    { name: 'Health & Wellness' },
+    { name: 'Home & Kitchen' },
+    { name: 'Jewelry & Accessories' },
     { name: 'Pet Supplies' },
+    { name: 'Sports & Fitness' },
+    { name: 'Toys & Kids' },
 ]
 
 const seedProductCategories = async () => {

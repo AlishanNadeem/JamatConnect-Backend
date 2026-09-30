@@ -10,44 +10,26 @@ const ADMIN_PASSWORD = 'Admin@123'
 
 const users = [
     {
-        name: 'Alishan Nadeem',
-        email: 'alishan.nadeem22@gmail.com',
-        password: ADMIN_PASSWORD,
-        role: ROLES.ADMIN,
-    },
-    {
         name: 'Jamat Connect Admin',
         email: 'info@jamatconnect.com',
         password: ADMIN_PASSWORD,
         role: ROLES.ADMIN,
     },
     {
-        name: 'Karim Ali',
-        email: 'karim@jamatconnect.com',
+        name: 'Alishan Nadeem',
+        email: 'alishan.nadeem22@gmail.com',
         password: ADMIN_PASSWORD,
         role: ROLES.USER,
     },
     {
-        name: 'Yasmin Hassan',
-        email: 'yasmin@jamatconnect.com',
+        name: 'Shayan Merchant',
+        email: 'shayanmerchant@hotmail.com',
         password: ADMIN_PASSWORD,
         role: ROLES.USER,
     },
     {
-        name: 'Salim Merali',
-        email: 'salim@jamatconnect.com',
-        password: ADMIN_PASSWORD,
-        role: ROLES.USER,
-    },
-    {
-        name: 'Gulbano Shah',
-        email: 'gulbano@jamatconnect.com',
-        password: ADMIN_PASSWORD,
-        role: ROLES.USER,
-    },
-    {
-        name: 'Nazim Hussain',
-        email: 'nazim@jamatconnect.com',
+        name: '',
+        email: 'almohin@gmail.com',
         password: ADMIN_PASSWORD,
         role: ROLES.USER,
     },
