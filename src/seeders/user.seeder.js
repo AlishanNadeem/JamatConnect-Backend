@@ -31,6 +31,11 @@ const users = [
         email: 'almohin@gmail.com',
         role: ROLES.USER,
     },
+    {
+        name: 'Asif Valji',
+        email: 'admin@imash.com.au',
+        role: ROLES.USER,
+    },
 ]
 
 const seedUsers = async () => {
