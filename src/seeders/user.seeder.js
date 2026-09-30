@@ -28,7 +28,7 @@ const users = [
         role: ROLES.USER,
     },
     {
-        name: '',
+        name: 'Al Mohin',
         email: 'almohin@gmail.com',
         password: ADMIN_PASSWORD,
         role: ROLES.USER,
