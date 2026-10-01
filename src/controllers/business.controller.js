@@ -351,6 +351,45 @@ export const updateBusiness = async (req, res, next) => {
     }
 }
 
+export const toggleBusinessActive = async (req, res, next) => {
+    try {
+
+        const { params, decoded } = req
+        const { id } = params
+
+        const business = await Business.findById(id)
+
+        if (!business) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found.',
+            })
+        }
+
+        if (!isBusinessOwner(business, decoded.id) && !isAdmin(decoded?.role)) {
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized.',
+            })
+        }
+
+        business.active = !business.active
+        await business.save()
+
+        logger.info(`Business active toggled: ${business.name} (${business.active})`)
+
+        return res.status(200).json({
+            success: true,
+            message: business.active ? 'Business activated successfully.' : 'Business deactivated successfully.',
+            data: business.toObject({ virtuals: true }),
+        })
+
+    } catch (error) {
+        logger.error(`Toggle Business Active Error: ${error.message}`)
+        next(error)
+    }
+}
+
 export const deleteBusiness = async (req, res, next) => {
     try {
 
