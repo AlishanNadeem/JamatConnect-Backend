@@ -542,7 +542,7 @@ export const getJobApplications = async (req, res, next) => {
 
         const applications = await JobApplication.find({ job: id })
             .select('applicant createdAt')
-            .populate('applicant', 'name image')
+            .populate('applicant', 'name email image phone dialing_code country_code')
             .sort({ createdAt: -1 })
             .lean({ virtuals: true })
 
