@@ -1,7 +1,8 @@
-import { existsSync, readFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
-import admin from 'firebase-admin'
+import { cert, getApps, initializeApp } from 'firebase-admin/app'
+import { getMessaging as getFirebaseMessaging } from 'firebase-admin/messaging'
 import logger from './logger.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -35,13 +36,13 @@ try {
         service_account.private_key = service_account.private_key.replace(/\\n/g, '\n')
     }
 
-    if (!admin.apps.length) {
-        admin.initializeApp({
-            credential: admin.credential.cert(service_account),
+    if (!getApps().length) {
+        initializeApp({
+            credential: cert(service_account),
         })
     }
 
-    messaging = admin.messaging()
+    messaging = getFirebaseMessaging()
     logger.info('Firebase Admin initialized for push notifications')
 } catch (error) {
     logger.error(`Firebase Admin init failed: ${error.message}`)
@@ -54,4 +55,4 @@ export const getMessaging = () => {
     return messaging
 }
 
-export default admin
+export default { getMessaging }
