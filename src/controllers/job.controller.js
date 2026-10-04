@@ -3,8 +3,10 @@ import { buildPaginationResponse, getPagination } from '../helpers/pagination.js
 import Business from '../models/business.model.js'
 import JobApplication from '../models/job-application.model.js'
 import Job from '../models/job.model.js'
+import User from '../models/user.model.js'
 import { isBusinessOwner } from '../services/business.service.js'
 import { isJobOwner } from '../services/job.service.js'
+import { sendPushToUser } from '../services/notification.service.js'
 import { BUSINESS_STATUS, isAdmin, searchRegex } from '../utils/index.js'
 
 export const createJob = async (req, res, next) => {
@@ -452,7 +454,7 @@ export const applyToJob = async (req, res, next) => {
         const { params, decoded } = req
         const { id } = params
 
-        const job = await Job.findById(id).populate('business', 'user status active')
+        const job = await Job.findById(id).populate('business', 'user name status active')
 
         if (!job) {
             return res.status(404).json({
@@ -495,6 +497,20 @@ export const applyToJob = async (req, res, next) => {
             job: id,
             business: job.business._id,
             applicant: decoded.id,
+        })
+
+        const applicant = await User.findById(decoded.id).select('name').lean()
+
+        sendPushToUser({
+            user_id: job.business.user,
+            title: 'You have a new applicant',
+            body: `${applicant?.name || 'Someone'} just applied for ${job.title} at ${job.business.name}.`,
+            data: {
+                type: 'job_application',
+                job_id: String(job._id),
+                application_id: String(application._id),
+                business_id: String(job.business._id),
+            },
         })
 
         logger.info(`Job application created: job=${id} applicant=${decoded.id}`)
