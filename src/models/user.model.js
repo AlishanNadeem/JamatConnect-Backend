@@ -43,6 +43,9 @@ const user_schema = mongoose.Schema({
     device_ids: [{
         type: String
     }],
+    fcm_tokens: [{
+        type: String
+    }],
     role: {
         type: String,
         enum: ENUM_ROLES,

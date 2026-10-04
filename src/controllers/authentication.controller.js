@@ -554,9 +554,11 @@ export const logout = async (req, res, next) => {
 
         const { decoded, body } = req
         let device_id = null
+        let fcm_token = null
 
         if (body) {
             device_id = body?.device_id
+            fcm_token = body?.fcm_token
         }
 
         const user = await User.findById(decoded.id)
@@ -568,8 +570,19 @@ export const logout = async (req, res, next) => {
             })
         }
 
+        let should_save = false
+
         if (device_id && user?.device_ids.includes(device_id)) {
             user.device_ids = user.device_ids.filter(id => id !== device_id)
+            should_save = true
+        }
+
+        if (fcm_token && user?.fcm_tokens?.includes(fcm_token)) {
+            user.fcm_tokens = user.fcm_tokens.filter(token => token !== fcm_token)
+            should_save = true
+        }
+
+        if (should_save) {
             await user.save()
         }
 

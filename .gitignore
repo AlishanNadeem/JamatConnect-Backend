@@ -9,5 +9,9 @@ logs/
 .env.local
 .env.*.local
 
+# Firebase service account keys
+**/jamat-connect-*.json
+**/firebase-service-account*.json
+
 # Uploads folder
 uploads/

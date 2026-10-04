@@ -50,7 +50,7 @@ export const getMyProfile = async (req, res, next) => {
         const { decoded } = req
 
         const user = await User.findById(decoded.id)
-            .select("-password")
+            .select("-password -fcm_tokens -device_ids")
             .lean({ virtuals: true })
 
         if (!user) {
@@ -188,6 +188,66 @@ export const deleteAccount = async (req, res, next) => {
 
     } catch (error) {
         logger.error(`Delete Account Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const registerFcmToken = async (req, res, next) => {
+    try {
+        const { decoded, body } = req
+        const { fcm_token } = body
+
+        const user = await User.findByIdAndUpdate(
+            decoded.id,
+            { $addToSet: { fcm_tokens: fcm_token } },
+            { new: true }
+        ).select('_id email')
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        logger.info(`FCM token registered for: ${user.email}`)
+
+        return res.status(200).json({
+            success: true,
+            message: 'FCM token registered successfully.',
+        })
+    } catch (error) {
+        logger.error(`Register FCM Token Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const removeFcmToken = async (req, res, next) => {
+    try {
+        const { decoded, body } = req
+        const { fcm_token } = body
+
+        const user = await User.findByIdAndUpdate(
+            decoded.id,
+            { $pull: { fcm_tokens: fcm_token } },
+            { new: true }
+        ).select('_id email')
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        logger.info(`FCM token removed for: ${user.email}`)
+
+        return res.status(200).json({
+            success: true,
+            message: 'FCM token removed successfully.',
+        })
+    } catch (error) {
+        logger.error(`Remove FCM Token Error: ${error.message}`)
         next(error)
     }
 }

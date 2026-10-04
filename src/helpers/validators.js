@@ -99,7 +99,17 @@ export const SET_PASSWORD_VALIDATOR = Joi.object({
 export const LOGOUT_VALIDATOR = Joi.object({
     device_id: Joi.string().optional().messages({
         'string.base': 'Device ID must be a string'
-    })
+    }),
+    fcm_token: Joi.string().optional().messages({
+        'string.base': 'FCM token must be a string',
+    }),
+})
+
+export const FCM_TOKEN_VALIDATOR = Joi.object({
+    fcm_token: Joi.string().trim().required().messages({
+        'string.empty': 'FCM token is required',
+        'any.required': 'FCM token is required',
+    }),
 })
 
 export const COMPLETE_PROFILE_VALIDATOR = Joi.object({
