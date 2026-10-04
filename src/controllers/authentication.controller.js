@@ -10,6 +10,7 @@ import Otp from '../models/otp.model.js'
 import User from '../models/user.model.js'
 import { getPasswordResetBlock } from '../services/auth.service.js'
 import { recordLoginLog } from '../services/log.service.js'
+import { sendPushToUser } from '../services/notification.service.js'
 import { recordReferral, resolveReferralCode } from '../services/referral.service.js'
 import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES } from '../utils/index.js'
 
@@ -91,6 +92,16 @@ export const signup = async (req, res, next) => {
             referrer_user: referrer._id,
             referred_user: user._id,
             referral_code,
+        })
+
+        sendPushToUser({
+            user_id: referrer._id,
+            title: 'Someone you invited just joined',
+            body: `${user.name} just joined through your invite. Thank you for bringing them in.`,
+            data: {
+                type: 'referral_joined',
+                user_id: String(user._id),
+            },
         })
 
         await sendMail({
