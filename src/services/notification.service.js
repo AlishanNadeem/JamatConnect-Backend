@@ -1,6 +1,8 @@
 import logger from '../config/logger.js'
 import { getMessaging } from '../config/firebase.js'
+import Notification from '../models/notification.model.js'
 import User from '../models/user.model.js'
+import { NOTIFICATION_TYPES } from '../utils/index.js'
 
 const INVALID_TOKEN_CODES = new Set([
     'messaging/invalid-registration-token',
@@ -15,7 +17,6 @@ const toStringData = (data = {}) =>
     }, {})
 
 const removeInvalidTokens = async (tokens = []) => {
-
     if (!tokens.length) return
 
     await User.updateMany(
@@ -24,7 +25,35 @@ const removeInvalidTokens = async (tokens = []) => {
     )
 
     logger.info(`Removed ${tokens.length} invalid FCM token(s)`)
-    
+}
+
+const saveNotifications = async ({
+    user_ids = [],
+    title,
+    body,
+    type = NOTIFICATION_TYPES.GENERAL,
+    data = {},
+}) => {
+    const unique_ids = [...new Set(user_ids.filter(Boolean))]
+
+    if (!unique_ids.length || !title || !body) return []
+
+    const payload_data = toStringData(data)
+
+    const docs = unique_ids.map((user_id) => ({
+        user: user_id,
+        title,
+        body,
+        type,
+        data: payload_data,
+    }))
+
+    try {
+        return await Notification.insertMany(docs, { ordered: false })
+    } catch (error) {
+        logger.error(`Save notifications error: ${error.message}`)
+        return []
+    }
 }
 
 export const sendPushToTokens = async ({
@@ -98,16 +127,36 @@ export const sendPushToUser = async ({
     title,
     body,
     data = {},
+    type = NOTIFICATION_TYPES.GENERAL,
+    save = true,
 }) => {
     try {
         if (!user_id) {
             return { success_count: 0, failure_count: 0 }
         }
 
+        if (save) {
+            await saveNotifications({
+                user_ids: [user_id],
+                title,
+                body,
+                type,
+                data,
+            })
+        }
+
         const user = await User.findById(user_id).select('fcm_tokens').lean()
         const tokens = user?.fcm_tokens || []
 
-        return await sendPushToTokens({ tokens, title, body, data })
+        return await sendPushToTokens({
+            tokens,
+            title,
+            body,
+            data: {
+                ...data,
+                type,
+            },
+        })
     } catch (error) {
         logger.error(`FCM sendPushToUser error: ${error.message}`)
         return { success_count: 0, failure_count: 0, error: error.message }
@@ -119,6 +168,8 @@ export const sendPushToUsers = async ({
     title,
     body,
     data = {},
+    type = NOTIFICATION_TYPES.GENERAL,
+    save = true,
 }) => {
     try {
         const unique_ids = [...new Set(user_ids.filter(Boolean))]
@@ -127,13 +178,31 @@ export const sendPushToUsers = async ({
             return { success_count: 0, failure_count: 0 }
         }
 
+        if (save) {
+            await saveNotifications({
+                user_ids: unique_ids,
+                title,
+                body,
+                type,
+                data,
+            })
+        }
+
         const users = await User.find({ _id: { $in: unique_ids } })
             .select('fcm_tokens')
             .lean()
 
         const tokens = users.flatMap((user) => user.fcm_tokens || [])
 
-        return await sendPushToTokens({ tokens, title, body, data })
+        return await sendPushToTokens({
+            tokens,
+            title,
+            body,
+            data: {
+                ...data,
+                type,
+            },
+        })
     } catch (error) {
         logger.error(`FCM sendPushToUsers error: ${error.message}`)
         return { success_count: 0, failure_count: 0, error: error.message }
@@ -144,17 +213,41 @@ export const sendPushToAllUsers = async ({
     title,
     body,
     data = {},
+    type = NOTIFICATION_TYPES.GENERAL,
+    save = true,
 }) => {
     try {
         const users = await User.find({
             fcm_tokens: { $exists: true, $ne: [] },
         })
-            .select('fcm_tokens')
+            .select('_id fcm_tokens')
             .lean()
+
+        if (!users.length) {
+            return { success_count: 0, failure_count: 0 }
+        }
+
+        if (save) {
+            await saveNotifications({
+                user_ids: users.map((user) => user._id),
+                title,
+                body,
+                type,
+                data,
+            })
+        }
 
         const tokens = users.flatMap((user) => user.fcm_tokens || [])
 
-        return await sendPushToTokens({ tokens, title, body, data })
+        return await sendPushToTokens({
+            tokens,
+            title,
+            body,
+            data: {
+                ...data,
+                type,
+            },
+        })
     } catch (error) {
         logger.error(`FCM sendPushToAllUsers error: ${error.message}`)
         return { success_count: 0, failure_count: 0, error: error.message }
