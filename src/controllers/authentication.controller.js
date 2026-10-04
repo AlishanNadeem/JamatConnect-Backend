@@ -12,7 +12,7 @@ import { getPasswordResetBlock } from '../services/auth.service.js'
 import { recordLoginLog } from '../services/log.service.js'
 import { sendPushToUser } from '../services/notification.service.js'
 import { recordReferral, resolveReferralCode } from '../services/referral.service.js'
-import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, ROLES } from '../utils/index.js'
+import { AUTH_TYPES, generateOtp, LOGIN_FAILURE_REASONS, LOGIN_LOG_EVENTS, NOTIFICATION_TYPES, ROLES } from '../utils/index.js'
 
 dotenv.config()
 
@@ -98,8 +98,8 @@ export const signup = async (req, res, next) => {
             user_id: referrer._id,
             title: 'Someone you invited just joined',
             body: `${user.name} just joined through your invite. Thank you for bringing them in.`,
+            type: NOTIFICATION_TYPES.REFERRAL_JOINED,
             data: {
-                type: 'referral_joined',
                 user_id: String(user._id),
             },
         })
