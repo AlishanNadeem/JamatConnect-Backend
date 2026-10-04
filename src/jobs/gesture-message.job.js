@@ -1,6 +1,7 @@
 import cron from 'node-cron'
 import logger from '../config/logger.js'
 import { sendPushToAllUsers } from '../services/notification.service.js'
+import { NOTIFICATION_TYPES } from '../utils/index.js'
 
 // Rotates through these on Mon / Wed / Fri at 00:00 UTC
 const GESTURE_MESSAGES = [
@@ -71,9 +72,8 @@ const sendGestureMessage = async () => {
         const result = await sendPushToAllUsers({
             title: message.title,
             body: message.body,
-            data: {
-                type: 'daily_gesture',
-            },
+            type: NOTIFICATION_TYPES.DAILY_GESTURE,
+            save: false,
         })
 
         logger.info(

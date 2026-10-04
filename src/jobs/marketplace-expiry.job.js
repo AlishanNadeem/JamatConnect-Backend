@@ -2,6 +2,7 @@ import cron from 'node-cron'
 import logger from '../config/logger.js'
 import Marketplace from '../models/marketplace.model.js'
 import { sendPushToUser } from '../services/notification.service.js'
+import { NOTIFICATION_TYPES } from '../utils/index.js'
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -29,15 +30,15 @@ const sendExpiryReminders = async () => {
             user_id: listing.user,
             title: 'Your listing expires in 3 days',
             body: `${listing.name} will expire soon. Renew it to keep it visible.`,
+            type: NOTIFICATION_TYPES.MARKETPLACE_EXPIRY_REMINDER,
             data: {
-                type: 'marketplace_expiry_reminder',
                 listing_id: String(listing._id),
             },
         })
     }
 
     logger.info(`Marketplace expiry reminder: ${listings.length} listing(s) notified.`)
-    
+
 }
 
 const expireListings = async () => {
@@ -64,8 +65,8 @@ const expireListings = async () => {
             user_id: listing.user,
             title: 'Your listing has expired',
             body: `${listing.name} is no longer visible. Renew it anytime to keep it live.`,
+            type: NOTIFICATION_TYPES.MARKETPLACE_EXPIRED,
             data: {
-                type: 'marketplace_expired',
                 listing_id: String(listing._id),
             },
         })

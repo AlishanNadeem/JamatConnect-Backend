@@ -7,7 +7,7 @@ import User from '../models/user.model.js'
 import { isBusinessOwner } from '../services/business.service.js'
 import { isJobOwner } from '../services/job.service.js'
 import { sendPushToUser } from '../services/notification.service.js'
-import { BUSINESS_STATUS, isAdmin, searchRegex } from '../utils/index.js'
+import { BUSINESS_STATUS, isAdmin, NOTIFICATION_TYPES, searchRegex } from '../utils/index.js'
 
 export const createJob = async (req, res, next) => {
     try {
@@ -505,8 +505,8 @@ export const applyToJob = async (req, res, next) => {
             user_id: job.business.user,
             title: 'You have a new applicant',
             body: `${applicant?.name || 'Someone'} just applied for ${job.title} at ${job.business.name}.`,
+            type: NOTIFICATION_TYPES.JOB_APPLICATION,
             data: {
-                type: 'job_application',
                 job_id: String(job._id),
                 application_id: String(application._id),
                 business_id: String(job.business._id),
