@@ -40,7 +40,8 @@ export const sendPushToTokens = async ({
     }
 
     if (!title || !body) {
-        throw new Error('Push notification title and body are required')
+        logger.error('FCM send skipped: title and body are required')
+        return { success_count: 0, failure_count: unique_tokens.length, error: 'title and body are required' }
     }
 
     try {
@@ -98,14 +99,19 @@ export const sendPushToUser = async ({
     body,
     data = {},
 }) => {
-    if (!user_id) {
-        return { success_count: 0, failure_count: 0 }
+    try {
+        if (!user_id) {
+            return { success_count: 0, failure_count: 0 }
+        }
+
+        const user = await User.findById(user_id).select('fcm_tokens').lean()
+        const tokens = user?.fcm_tokens || []
+
+        return await sendPushToTokens({ tokens, title, body, data })
+    } catch (error) {
+        logger.error(`FCM sendPushToUser error: ${error.message}`)
+        return { success_count: 0, failure_count: 0, error: error.message }
     }
-
-    const user = await User.findById(user_id).select('fcm_tokens').lean()
-    const tokens = user?.fcm_tokens || []
-
-    return sendPushToTokens({ tokens, title, body, data })
 }
 
 export const sendPushToUsers = async ({
@@ -114,19 +120,24 @@ export const sendPushToUsers = async ({
     body,
     data = {},
 }) => {
-    const unique_ids = [...new Set(user_ids.filter(Boolean))]
+    try {
+        const unique_ids = [...new Set(user_ids.filter(Boolean))]
 
-    if (!unique_ids.length) {
-        return { success_count: 0, failure_count: 0 }
+        if (!unique_ids.length) {
+            return { success_count: 0, failure_count: 0 }
+        }
+
+        const users = await User.find({ _id: { $in: unique_ids } })
+            .select('fcm_tokens')
+            .lean()
+
+        const tokens = users.flatMap((user) => user.fcm_tokens || [])
+
+        return await sendPushToTokens({ tokens, title, body, data })
+    } catch (error) {
+        logger.error(`FCM sendPushToUsers error: ${error.message}`)
+        return { success_count: 0, failure_count: 0, error: error.message }
     }
-
-    const users = await User.find({ _id: { $in: unique_ids } })
-        .select('fcm_tokens')
-        .lean()
-
-    const tokens = users.flatMap((user) => user.fcm_tokens || [])
-
-    return sendPushToTokens({ tokens, title, body, data })
 }
 
 export const sendPushToAllUsers = async ({
@@ -134,13 +145,18 @@ export const sendPushToAllUsers = async ({
     body,
     data = {},
 }) => {
-    const users = await User.find({
-        fcm_tokens: { $exists: true, $ne: [] },
-    })
-        .select('fcm_tokens')
-        .lean()
+    try {
+        const users = await User.find({
+            fcm_tokens: { $exists: true, $ne: [] },
+        })
+            .select('fcm_tokens')
+            .lean()
 
-    const tokens = users.flatMap((user) => user.fcm_tokens || [])
+        const tokens = users.flatMap((user) => user.fcm_tokens || [])
 
-    return sendPushToTokens({ tokens, title, body, data })
+        return await sendPushToTokens({ tokens, title, body, data })
+    } catch (error) {
+        logger.error(`FCM sendPushToAllUsers error: ${error.message}`)
+        return { success_count: 0, failure_count: 0, error: error.message }
+    }
 }
