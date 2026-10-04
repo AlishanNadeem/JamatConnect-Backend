@@ -157,6 +157,19 @@ export const WORKPLACE_TYPE_OPTIONS = [
     { label: "Hybrid", value: WORKPLACE_TYPES.HYBRID },
 ]
 
+export const NOTIFICATION_TYPES = {
+    REFERRAL_JOINED: 'referral_joined',
+    JOB_APPLICATION: 'job_application',
+    MARKETPLACE_EXPIRED: 'marketplace_expired',
+    MARKETPLACE_EXPIRY_REMINDER: 'marketplace_expiry_reminder',
+    DAILY_GESTURE: 'daily_gesture',
+    BUSINESS_APPROVED: 'business_approved',
+    BUSINESS_REJECTED: 'business_rejected',
+    GENERAL: 'general',
+}
+
+export const ENUM_NOTIFICATION_TYPES = Object.values(NOTIFICATION_TYPES)
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
