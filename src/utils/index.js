@@ -170,6 +170,14 @@ export const NOTIFICATION_TYPES = {
 
 export const ENUM_NOTIFICATION_TYPES = Object.values(NOTIFICATION_TYPES)
 
+export const REDEMPTION_STATUS = {
+    ACTIVE: 'active',
+    USED: 'used',
+    EXPIRED: 'expired',
+}
+
+export const ENUM_REDEMPTION_STATUS = Object.values(REDEMPTION_STATUS)
+
 export const getMediaUrl = (path) => {
 
     if (!path) return null
