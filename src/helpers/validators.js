@@ -466,3 +466,34 @@ export const UPDATE_JOB_VALIDATOR = Joi.object({
         'string.empty': 'Location cannot be empty.',
     }),
 })
+
+export const CREATE_SPECIAL_VALIDATOR = Joi.object({
+    business: Joi.string().required().messages({
+        'any.required': 'Business is required.',
+        'string.empty': 'Business cannot be empty.',
+    }),
+    title: Joi.string().min(2).max(100).required().messages({
+        'any.required': 'Title is required.',
+        'string.empty': 'Title cannot be empty.',
+        'string.min': 'Title must be at least 2 characters long.',
+        'string.max': 'Title cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).required().messages({
+        'any.required': 'Description is required.',
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    discount: Joi.string().min(1).max(100).required().messages({
+        'any.required': 'Discount is required.',
+        'string.empty': 'Discount cannot be empty.',
+        'string.max': 'Discount cannot exceed 100 characters.',
+    }),
+})
+
+export const VERIFY_SPECIAL_CODE_VALIDATOR = Joi.object({
+    code: Joi.string().min(4).max(20).required().messages({
+        'any.required': 'Code is required.',
+        'string.empty': 'Code cannot be empty.',
+    }),
+})
