@@ -184,8 +184,8 @@ export const CREATE_USER_VALIDATOR = Joi.object({
     password: Joi.string().min(6).optional().messages({
         'string.min': 'Password must be at least 6 characters long.',
     }),
-    role: Joi.string().valid(...ENUM_ROLES).default(ROLES.USER).messages({
-        'any.only': `Role must be one of: ${ENUM_ROLES.join(', ')}`,
+    role: Joi.string().valid(ROLES.USER).default(ROLES.USER).messages({
+        'any.only': 'Admins can only create user accounts.',
     }),
     country_code: Joi.string().optional().allow('').messages({
         'string.base': 'Please enter a valid country code',
@@ -210,11 +210,8 @@ export const ADMIN_UPDATE_USER_VALIDATOR = Joi.object({
         'string.email': 'Please enter a valid email',
         'string.empty': 'Email cannot be empty.',
     }),
-    password: Joi.string().min(6).optional().messages({
-        'string.min': 'Password must be at least 6 characters long.',
-    }),
-    role: Joi.string().valid(...ENUM_ROLES).optional().messages({
-        'any.only': `Role must be one of: ${ENUM_ROLES.join(', ')}`,
+    role: Joi.string().valid(ROLES.USER).optional().messages({
+        'any.only': 'Admins cannot promote users to admin.',
     }),
     country_code: Joi.string().optional().allow('').messages({
         'string.base': 'Please enter a valid country code',

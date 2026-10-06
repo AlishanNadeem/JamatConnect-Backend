@@ -328,7 +328,7 @@ export const getUserById = async (req, res, next) => {
 }
 
 export const createUser = async (req, res, next) => {
-    
+
     const uploaded_image = req.file?.path
 
     const cleanupUploadedImage = () => {
@@ -341,13 +341,20 @@ export const createUser = async (req, res, next) => {
             name,
             email,
             password,
-            role = ROLES.USER,
             country_code,
             dialing_code,
             phone,
             active = true,
             send_invite = true,
         } = body
+
+        if (body.role && body.role !== ROLES.USER) {
+            cleanupUploadedImage()
+            return res.status(400).json({
+                success: false,
+                message: 'Admins can only create user accounts.',
+            })
+        }
 
         const exists = await User.findOne({ email }).collation({ locale: 'en', strength: 2 })
 
@@ -365,14 +372,10 @@ export const createUser = async (req, res, next) => {
             name,
             email,
             password: plain_password,
-            role,
+            role: ROLES.USER,
             active,
             auth_provider: AUTH_TYPES.EMAIL,
-            is_seed: role === ROLES.ADMIN,
-        }
-
-        if (role === ROLES.USER) {
-            payload.referred_by_user = decoded.id
+            is_seed: true,
         }
 
         if (country_code) payload.country_code = country_code
@@ -433,7 +436,6 @@ export const updateUser = async (req, res, next) => {
         const {
             name,
             email,
-            password,
             role,
             country_code,
             dialing_code,
@@ -459,7 +461,15 @@ export const updateUser = async (req, res, next) => {
             })
         }
 
-        if (String(decoded.id) === String(id) && role && role !== ROLES.ADMIN) {
+        if (role === ROLES.ADMIN && user.role !== ROLES.ADMIN) {
+            cleanupUploadedImage()
+            return res.status(400).json({
+                success: false,
+                message: 'Admins cannot promote users to admin.',
+            })
+        }
+
+        if (String(decoded.id) === String(id) && role && role !== user.role) {
             cleanupUploadedImage()
             return res.status(400).json({
                 success: false,
@@ -485,7 +495,6 @@ export const updateUser = async (req, res, next) => {
         const updated_fields = {}
         if (name !== undefined) updated_fields.name = name
         if (email !== undefined) updated_fields.email = email
-        if (password !== undefined) updated_fields.password = password
         if (role !== undefined) updated_fields.role = role
         if (country_code !== undefined) updated_fields.country_code = country_code
         if (dialing_code !== undefined) updated_fields.dialing_code = dialing_code
