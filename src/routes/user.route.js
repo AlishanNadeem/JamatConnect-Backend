@@ -2,21 +2,29 @@ import express from 'express'
 import {
     changePassword,
     completeProfile,
+    createUser,
     deleteAccount,
+    deleteUser,
     getMyProfile,
+    getUserById,
+    getUsers,
     registerFcmToken,
     removeFcmToken,
     updateProfile,
+    updateUser,
 } from '../controllers/user.controller.js'
 import {
+    ADMIN_UPDATE_USER_VALIDATOR,
     CHANGE_PASSWORD_VALIDATOR,
     COMPLETE_PROFILE_VALIDATOR,
+    CREATE_USER_VALIDATOR,
     FCM_TOKEN_VALIDATOR,
     UPDATE_PROFILE_VALIDATOR,
 } from '../helpers/validators.js'
-import { AuthVerifier } from '../middleware/auth.middleware.js'
+import { AuthVerifier, RestrictAccess } from '../middleware/auth.middleware.js'
 import upload from '../middleware/upload.middleware.js'
 import validator from '../middleware/validator.js'
+import { ROLES } from '../utils/index.js'
 
 const router = express.Router()
 
@@ -33,5 +41,29 @@ router.post('/fcm-token', AuthVerifier, validator(FCM_TOKEN_VALIDATOR), register
 router.delete('/fcm-token', AuthVerifier, validator(FCM_TOKEN_VALIDATOR), removeFcmToken)
 
 router.delete('/delete-account', AuthVerifier, deleteAccount)
+
+router.get('/get', AuthVerifier, RestrictAccess([ROLES.ADMIN]), getUsers)
+
+router.get('/get/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), getUserById)
+
+router.post(
+    '/create',
+    AuthVerifier,
+    RestrictAccess([ROLES.ADMIN]),
+    upload('user').single('image'),
+    validator(CREATE_USER_VALIDATOR),
+    createUser
+)
+
+router.patch(
+    '/update/:id',
+    AuthVerifier,
+    RestrictAccess([ROLES.ADMIN]),
+    upload('user').single('image'),
+    validator(ADMIN_UPDATE_USER_VALIDATOR, { optional: true }),
+    updateUser
+)
+
+router.delete('/delete/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), deleteUser)
 
 export default router

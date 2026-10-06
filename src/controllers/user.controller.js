@@ -1,21 +1,28 @@
 import logger from '../config/logger.js'
 import { compareData } from '../helpers/encryption.js'
 import { removeFiles } from '../helpers/folder.js'
+import { sendMail } from '../helpers/mail.js'
+import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import User from '../models/user.model.js'
-import { DUMMY_USER_IMAGE_PATH } from '../utils/index.js'
+import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, generatePassword, ROLES, searchRegex } from '../utils/index.js'
+
+const USER_PUBLIC_SELECT = '-password -fcm_tokens -device_ids'
+
+const sanitizeUser = (user) => {
+    if (!user) return user
+    const data = typeof user.toObject === 'function'
+        ? user.toObject({ virtuals: true })
+        : user
+    delete data.password
+    delete data.fcm_tokens
+    delete data.device_ids
+    return data
+}
 
 export const completeProfile = async (req, res, next) => {
     try {
 
         const { body, decoded } = req
-
-        const {
-            date_of_birth,
-            country_code,
-            dialing_code,
-            phone,
-            emergency_notes,
-        } = body
 
         const user = await User.findByIdAndUpdate(
             decoded.id,
@@ -50,7 +57,7 @@ export const getMyProfile = async (req, res, next) => {
         const { decoded } = req
 
         const user = await User.findById(decoded.id)
-            .select("-password -fcm_tokens -device_ids")
+            .select(USER_PUBLIC_SELECT)
             .lean({ virtuals: true })
 
         if (!user) {
@@ -248,6 +255,303 @@ export const removeFcmToken = async (req, res, next) => {
         })
     } catch (error) {
         logger.error(`Remove FCM Token Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const getUsers = async (req, res, next) => {
+    try {
+        const { query } = req
+        const { search, role, active } = query
+        const { skip, limit, page, page_size } = getPagination(query)
+
+        const filter = {}
+
+        if (role !== undefined) filter.role = role
+        if (active !== undefined) filter.active = active === true || active === 'true'
+
+        if (search !== undefined && String(search).trim()) {
+            const regex = searchRegex(String(search).trim())
+            filter.$or = [
+                { name: regex },
+                { email: regex },
+                { phone: regex },
+            ]
+        }
+
+        const [users, total] = await Promise.all([
+            User.find(filter)
+                .select(USER_PUBLIC_SELECT)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean({ virtuals: true }),
+            User.countDocuments(filter),
+        ])
+
+        return res.status(200).json({
+            success: true,
+            message: 'Users fetched successfully.',
+            ...buildPaginationResponse(users, total, page, page_size),
+        })
+    } catch (error) {
+        logger.error(`Get Users Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const getUserById = async (req, res, next) => {
+    try {
+        const { params } = req
+        const { id } = params
+
+        const user = await User.findById(id)
+            .select(USER_PUBLIC_SELECT)
+            .lean({ virtuals: true })
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'User fetched successfully.',
+            data: user,
+        })
+    } catch (error) {
+        logger.error(`Get User Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const createUser = async (req, res, next) => {
+    
+    const uploaded_image = req.file?.path
+
+    const cleanupUploadedImage = () => {
+        if (uploaded_image) removeFiles(uploaded_image)
+    }
+
+    try {
+        const { decoded, body, file } = req
+        const {
+            name,
+            email,
+            password,
+            role = ROLES.USER,
+            country_code,
+            dialing_code,
+            phone,
+            active = true,
+            send_invite = true,
+        } = body
+
+        const exists = await User.findOne({ email }).collation({ locale: 'en', strength: 2 })
+
+        if (exists) {
+            cleanupUploadedImage()
+            return res.status(409).json({
+                success: false,
+                message: 'User already exists with this email.',
+            })
+        }
+
+        const plain_password = password || generatePassword(12)
+
+        const payload = {
+            name,
+            email,
+            password: plain_password,
+            role,
+            active,
+            auth_provider: AUTH_TYPES.EMAIL,
+            is_seed: role === ROLES.ADMIN,
+        }
+
+        if (role === ROLES.USER) {
+            payload.referred_by_user = decoded.id
+        }
+
+        if (country_code) payload.country_code = country_code
+        if (dialing_code) payload.dialing_code = dialing_code
+        if (phone) payload.phone = phone
+        if (file?.path) payload.image = file.path
+
+        const user = new User(payload)
+        await user.save()
+
+        if (send_invite) {
+            try {
+                await sendMail({
+                    to: user.email,
+                    subject: 'Welcome to Jamat Connect — your login details',
+                    template: 'admin_user_invite',
+                    template_vars: {
+                        name: user.name,
+                        email: user.email,
+                        password: plain_password,
+                        app_name: 'Jamat Connect',
+                        logo_url: `${process.env.BASE_URL}uploads/logo.png`,
+                    },
+                })
+            } catch (mail_error) {
+                logger.error(`Create User invite email failed: ${mail_error.message}`)
+            }
+        }
+
+        logger.info(`User created by admin ${decoded.email}: ${user.email}`)
+
+        const data = await User.findById(user._id)
+            .select(USER_PUBLIC_SELECT)
+            .lean({ virtuals: true })
+
+        return res.status(201).json({
+            success: true,
+            message: 'User created successfully.',
+            data,
+        })
+    } catch (error) {
+        cleanupUploadedImage()
+        logger.error(`Create User Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const updateUser = async (req, res, next) => {
+    const uploaded_image = req.file?.path
+
+    const cleanupUploadedImage = () => {
+        if (uploaded_image) removeFiles(uploaded_image)
+    }
+
+    try {
+        const { decoded, body, file, params } = req
+        const { id } = params
+        const {
+            name,
+            email,
+            password,
+            role,
+            country_code,
+            dialing_code,
+            phone,
+            active,
+        } = body
+
+        const user = await User.findById(id)
+
+        if (!user) {
+            cleanupUploadedImage()
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        if (String(decoded.id) === String(id) && active === false) {
+            cleanupUploadedImage()
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot deactivate your own account.',
+            })
+        }
+
+        if (String(decoded.id) === String(id) && role && role !== ROLES.ADMIN) {
+            cleanupUploadedImage()
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot change your own role.',
+            })
+        }
+
+        if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+            const exists = await User.findOne({
+                email,
+                _id: { $ne: id },
+            }).collation({ locale: 'en', strength: 2 })
+
+            if (exists) {
+                cleanupUploadedImage()
+                return res.status(409).json({
+                    success: false,
+                    message: 'User already exists with this email.',
+                })
+            }
+        }
+
+        const updated_fields = {}
+        if (name !== undefined) updated_fields.name = name
+        if (email !== undefined) updated_fields.email = email
+        if (password !== undefined) updated_fields.password = password
+        if (role !== undefined) updated_fields.role = role
+        if (country_code !== undefined) updated_fields.country_code = country_code
+        if (dialing_code !== undefined) updated_fields.dialing_code = dialing_code
+        if (phone !== undefined) updated_fields.phone = phone
+        if (active !== undefined) updated_fields.active = active
+
+        if (file?.path) {
+            if (user.image && user.image !== DUMMY_USER_IMAGE_PATH) {
+                removeFiles(user.image)
+            }
+            updated_fields.image = file.path
+        }
+
+        const updated_user = await User.findByIdAndUpdate(
+            id,
+            { $set: updated_fields },
+            { new: true, runValidators: true }
+        ).select(USER_PUBLIC_SELECT)
+
+        logger.info(`User updated by admin ${decoded.email}: ${updated_user.email}`)
+
+        return res.status(200).json({
+            success: true,
+            message: 'User updated successfully.',
+            data: sanitizeUser(updated_user),
+        })
+    } catch (error) {
+        cleanupUploadedImage()
+        logger.error(`Update User Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const deleteUser = async (req, res, next) => {
+    try {
+        const { decoded, params } = req
+        const { id } = params
+
+        if (String(decoded.id) === String(id)) {
+            return res.status(400).json({
+                success: false,
+                message: 'You cannot delete your own account.',
+            })
+        }
+
+        const user = await User.findByIdAndDelete(id)
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        if (user.image && user.image !== DUMMY_USER_IMAGE_PATH) {
+            removeFiles(user.image)
+        }
+
+        logger.info(`User deleted by admin ${decoded.email}: ${user.email}`)
+
+        return res.status(200).json({
+            success: true,
+            message: 'User deleted successfully.',
+        })
+    } catch (error) {
+        logger.error(`Delete User Error: ${error.message}`)
         next(error)
     }
 }

@@ -169,6 +169,65 @@ export const UPDATE_PROFILE_VALIDATOR = Joi.object({
     }),
 })
 
+export const CREATE_USER_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(50).required().messages({
+        'any.required': 'Name is required.',
+        'string.empty': 'Name cannot be empty.',
+        'string.min': 'Name must be at least 2 characters long.',
+        'string.max': 'Name cannot exceed 50 characters.',
+    }),
+    email: Joi.string().email().required().messages({
+        'string.email': 'Please enter a valid email',
+        'any.required': 'Email is required.',
+        'string.empty': 'Email is required.',
+    }),
+    password: Joi.string().min(6).optional().messages({
+        'string.min': 'Password must be at least 6 characters long.',
+    }),
+    role: Joi.string().valid(...ENUM_ROLES).default(ROLES.USER).messages({
+        'any.only': `Role must be one of: ${ENUM_ROLES.join(', ')}`,
+    }),
+    country_code: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid country code',
+    }),
+    dialing_code: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid dialing code',
+    }),
+    phone: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid phone number',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').default(true),
+    send_invite: Joi.boolean().truthy('true', '1').falsy('false', '0').default(true),
+})
+
+export const ADMIN_UPDATE_USER_VALIDATOR = Joi.object({
+    name: Joi.string().min(2).max(50).optional().messages({
+        'string.empty': 'Name cannot be empty.',
+        'string.min': 'Name must be at least 2 characters long.',
+        'string.max': 'Name cannot exceed 50 characters.',
+    }),
+    email: Joi.string().email().optional().messages({
+        'string.email': 'Please enter a valid email',
+        'string.empty': 'Email cannot be empty.',
+    }),
+    password: Joi.string().min(6).optional().messages({
+        'string.min': 'Password must be at least 6 characters long.',
+    }),
+    role: Joi.string().valid(...ENUM_ROLES).optional().messages({
+        'any.only': `Role must be one of: ${ENUM_ROLES.join(', ')}`,
+    }),
+    country_code: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid country code',
+    }),
+    dialing_code: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid dialing code',
+    }),
+    phone: Joi.string().optional().allow('').messages({
+        'string.base': 'Please enter a valid phone number',
+    }),
+    active: Joi.boolean().truthy('true', '1').falsy('false', '0').optional(),
+})
+
 export const CREATE_FEEDBACK_VALIDATOR = Joi.object({
     name: Joi.string().min(2).max(50).required().messages({
         'any.required': 'Name is required.',
