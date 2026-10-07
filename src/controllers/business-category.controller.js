@@ -1,6 +1,7 @@
 import logger from '../config/logger.js'
 import { removeFiles } from '../helpers/folder.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
+import Business from '../models/business.model.js'
 import BusinessCategory from '../models/business-category.model.js'
 import { ROLES, searchRegex } from '../utils/index.js'
 
@@ -73,7 +74,7 @@ export const getBusinessCategories = async (req, res, next) => {
 
         const filter = {}
 
-        if (active !== undefined) filter.active = active
+        if (active !== undefined) filter.active = active === true || active === 'true'
         if (search !== undefined) filter.name = searchRegex(search)
 
         if (!decoded || (decoded && decoded?.role === ROLES.USER)) {
@@ -85,10 +86,31 @@ export const getBusinessCategories = async (req, res, next) => {
             BusinessCategory.countDocuments(filter),
         ])
 
+        let data = categories
+
+        if (decoded?.role === ROLES.ADMIN && categories.length) {
+
+            const category_ids = categories.map((category) => category._id)
+            const business_counts = await Business.aggregate([
+                { $match: { category: { $in: category_ids } } },
+                { $group: { _id: '$category', count: { $sum: 1 } } },
+            ])
+
+            const count_map = new Map(
+                business_counts.map((item) => [String(item._id), item.count])
+            )
+
+            data = categories.map((category) => ({
+                ...category,
+                business_count: count_map.get(String(category._id)) || 0,
+            }))
+            
+        }
+
         return res.status(200).json({
             success: true,
             message: 'Business categories fetched successfully.',
-            ...buildPaginationResponse(categories, total, page, page_size),
+            ...buildPaginationResponse(data, total, page, page_size),
         })
 
     } catch (error) {
@@ -202,7 +224,7 @@ export const deleteBusinessCategory = async (req, res, next) => {
         const { params } = req
         const { id } = params
 
-        const category = await BusinessCategory.findByIdAndDelete(id)
+        const category = await BusinessCategory.findById(id)
 
         if (!category) {
             return res.status(404).json({
@@ -210,6 +232,17 @@ export const deleteBusinessCategory = async (req, res, next) => {
                 message: 'Business category not found.',
             })
         }
+
+        const business_count = await Business.countDocuments({ category: id })
+
+        if (business_count > 0) {
+            return res.status(400).json({
+                success: false,
+                message: `Cannot delete this category because ${business_count} business${business_count === 1 ? '' : 'es'} ${business_count === 1 ? 'is' : 'are'} registered under it.`,
+            })
+        }
+
+        await BusinessCategory.findByIdAndDelete(id)
 
         if (category.image) {
             removeFiles(category.image)
