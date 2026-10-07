@@ -423,107 +423,47 @@ export const createUser = async (req, res, next) => {
     }
 }
 
-export const updateUser = async (req, res, next) => {
-    const uploaded_image = req.file?.path
-
-    const cleanupUploadedImage = () => {
-        if (uploaded_image) removeFiles(uploaded_image)
-    }
-
+export const toggleUserActive = async (req, res, next) => {
     try {
-        const { decoded, body, file, params } = req
+        const { decoded, params } = req
         const { id } = params
-        const {
-            name,
-            email,
-            role,
-            country_code,
-            dialing_code,
-            phone,
-            active,
-        } = body
 
         const user = await User.findById(id)
 
         if (!user) {
-            cleanupUploadedImage()
             return res.status(404).json({
                 success: false,
                 message: 'User not found.',
             })
         }
 
-        if (String(decoded.id) === String(id) && active === false) {
-            cleanupUploadedImage()
+        if (String(decoded.id) === String(id)) {
             return res.status(400).json({
                 success: false,
-                message: 'You cannot deactivate your own account.',
+                message: 'You cannot change your own account status.',
             })
         }
 
-        if (role === ROLES.ADMIN && user.role !== ROLES.ADMIN) {
-            cleanupUploadedImage()
-            return res.status(400).json({
-                success: false,
-                message: 'Admins cannot promote users to admin.',
-            })
-        }
+        user.active = !user.active
+        await user.save()
 
-        if (String(decoded.id) === String(id) && role && role !== user.role) {
-            cleanupUploadedImage()
-            return res.status(400).json({
-                success: false,
-                message: 'You cannot change your own role.',
-            })
-        }
+        const data = await User.findById(user._id)
+            .select(USER_PUBLIC_SELECT)
+            .lean({ virtuals: true })
 
-        if (email && email.toLowerCase() !== user.email.toLowerCase()) {
-            const exists = await User.findOne({
-                email,
-                _id: { $ne: id },
-            }).collation({ locale: 'en', strength: 2 })
-
-            if (exists) {
-                cleanupUploadedImage()
-                return res.status(409).json({
-                    success: false,
-                    message: 'User already exists with this email.',
-                })
-            }
-        }
-
-        const updated_fields = {}
-        if (name !== undefined) updated_fields.name = name
-        if (email !== undefined) updated_fields.email = email
-        if (role !== undefined) updated_fields.role = role
-        if (country_code !== undefined) updated_fields.country_code = country_code
-        if (dialing_code !== undefined) updated_fields.dialing_code = dialing_code
-        if (phone !== undefined) updated_fields.phone = phone
-        if (active !== undefined) updated_fields.active = active
-
-        if (file?.path) {
-            if (user.image && user.image !== DUMMY_USER_IMAGE_PATH) {
-                removeFiles(user.image)
-            }
-            updated_fields.image = file.path
-        }
-
-        const updated_user = await User.findByIdAndUpdate(
-            id,
-            { $set: updated_fields },
-            { new: true, runValidators: true }
-        ).select(USER_PUBLIC_SELECT)
-
-        logger.info(`User updated by admin ${decoded.email}: ${updated_user.email}`)
+        logger.info(
+            `User active toggled by admin ${decoded.email}: ${user.email} (${user.active})`
+        )
 
         return res.status(200).json({
             success: true,
-            message: 'User updated successfully.',
-            data: sanitizeUser(updated_user),
+            message: user.active
+                ? 'User activated successfully.'
+                : 'User deactivated successfully.',
+            data: sanitizeUser(data),
         })
     } catch (error) {
-        cleanupUploadedImage()
-        logger.error(`Update User Error: ${error.message}`)
+        logger.error(`Toggle User Active Error: ${error.message}`)
         next(error)
     }
 }

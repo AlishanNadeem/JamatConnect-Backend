@@ -10,11 +10,10 @@ import {
     getUsers,
     registerFcmToken,
     removeFcmToken,
+    toggleUserActive,
     updateProfile,
-    updateUser,
 } from '../controllers/user.controller.js'
 import {
-    ADMIN_UPDATE_USER_VALIDATOR,
     CHANGE_PASSWORD_VALIDATOR,
     COMPLETE_PROFILE_VALIDATOR,
     CREATE_USER_VALIDATOR,
@@ -56,12 +55,10 @@ router.post(
 )
 
 router.patch(
-    '/update/:id',
+    '/toggle-active/:id',
     AuthVerifier,
     RestrictAccess([ROLES.ADMIN]),
-    upload('user').single('image'),
-    validator(ADMIN_UPDATE_USER_VALIDATOR, { optional: true }),
-    updateUser
+    toggleUserActive
 )
 
 router.delete('/delete/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), deleteUser)
