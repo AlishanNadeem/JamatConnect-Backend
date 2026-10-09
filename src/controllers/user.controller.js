@@ -330,6 +330,15 @@ export const getUserById = async (req, res, next) => {
             .select('createdAt method source')
             .lean()
 
+        const [referred_users, referred_count] = await Promise.all([
+            User.find({ referred_by_user: id })
+                .select('name email createdAt image')
+                .sort({ createdAt: -1 })
+                .limit(50)
+                .lean({ virtuals: true }),
+            User.countDocuments({ referred_by_user: id }),
+        ])
+
         const push_notifications_enabled = Array.isArray(user.fcm_tokens) && user.fcm_tokens.length > 0
         delete user.fcm_tokens
 
@@ -339,6 +348,8 @@ export const getUserById = async (req, res, next) => {
             data: {
                 ...user,
                 push_notifications_enabled,
+                referred_count,
+                referred_users,
                 last_login: last_login_log
                     ? {
                         at: last_login_log.createdAt,
