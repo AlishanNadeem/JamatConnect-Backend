@@ -3,8 +3,9 @@ import { compareData } from '../helpers/encryption.js'
 import { removeFiles } from '../helpers/folder.js'
 import { sendMail } from '../helpers/mail.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
+import LoginLog from '../models/login-log.model.js'
 import User from '../models/user.model.js'
-import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, generatePassword, ROLES, searchRegex } from '../utils/index.js'
+import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, generatePassword, LOGIN_LOG_EVENTS, ROLES, searchRegex } from '../utils/index.js'
 
 const USER_PUBLIC_SELECT = '-password -fcm_tokens -device_ids'
 
@@ -316,10 +317,27 @@ export const getUserById = async (req, res, next) => {
             })
         }
 
+        const last_login_log = await LoginLog.findOne({
+            user: id,
+            event: LOGIN_LOG_EVENTS.LOGIN_SUCCESS,
+        })
+            .sort({ createdAt: -1 })
+            .select('createdAt method source')
+            .lean()
+
         return res.status(200).json({
             success: true,
             message: 'User fetched successfully.',
-            data: user,
+            data: {
+                ...user,
+                last_login: last_login_log
+                    ? {
+                        at: last_login_log.createdAt,
+                        method: last_login_log.method,
+                        source: last_login_log.source,
+                    }
+                    : null,
+            },
         })
     } catch (error) {
         logger.error(`Get User Error: ${error.message}`)
