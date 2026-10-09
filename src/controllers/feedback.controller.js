@@ -1,7 +1,21 @@
 import Feedback from '../models/feedback.model.js'
 import logger from '../config/logger.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
-import { searchRegex } from '../utils/index.js'
+import { getMediaUrl, searchRegex } from '../utils/index.js'
+
+const withUserImage = (feedback) => {
+
+    if (!feedback?.user) return feedback
+
+    return {
+        ...feedback,
+        user: {
+            ...feedback.user,
+            image_url: getMediaUrl(feedback.user.image),
+        },
+    }
+
+}
 
 export const addFeedback = async (req, res, next) => {
     try {
@@ -74,14 +88,14 @@ export const getFeedbacks = async (req, res, next) => {
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
-                .lean({ virtuals: true }),
+                .lean(),
             Feedback.countDocuments(filter),
         ])
 
         return res.status(200).json({
             success: true,
             message: 'Feedbacks fetched successfully.',
-            ...buildPaginationResponse(feedbacks, total, page, page_size),
+            ...buildPaginationResponse(feedbacks.map(withUserImage), total, page, page_size),
         })
     } catch (error) {
         logger.error(`Get Feedbacks Error: ${error.message}`)
@@ -99,7 +113,7 @@ export const getFeedbackById = async (req, res, next) => {
                 path: 'user',
                 select: 'name email image',
             })
-            .lean({ virtuals: true })
+            .lean()
 
         if (!feedback) {
             return res.status(404).json({
@@ -116,7 +130,7 @@ export const getFeedbackById = async (req, res, next) => {
         return res.status(200).json({
             success: true,
             message: 'Feedback fetched successfully.',
-            data: feedback,
+            data: withUserImage(feedback),
         })
     } catch (error) {
         logger.error(`Get Feedback Error: ${error.message}`)
@@ -146,14 +160,14 @@ export const toggleFeedbackRead = async (req, res, next) => {
                 path: 'user',
                 select: 'name email image',
             })
-            .lean({ virtuals: true })
+            .lean()
 
         return res.status(200).json({
             success: true,
             message: feedback.is_read
                 ? 'Feedback marked as read.'
                 : 'Feedback marked as unread.',
-            data,
+            data: withUserImage(data),
         })
     } catch (error) {
         logger.error(`Toggle Feedback Read Error: ${error.message}`)
