@@ -38,31 +38,43 @@ export const getFeedbacks = async (req, res, next) => {
         const { skip, limit, page, page_size } = getPagination(query)
 
         const filter = {}
+        const and = []
 
         if (is_read !== undefined) {
-            filter.is_read = is_read === true || is_read === 'true'
+            const read = is_read === true || is_read === 'true'
+            if (read) {
+                and.push({ is_read: true })
+            } else {
+                and.push({
+                    $or: [{ is_read: false }, { is_read: { $exists: false } }],
+                })
+            }
         }
 
         if (search !== undefined && String(search).trim()) {
             const regex = searchRegex(String(search).trim())
-            filter.$or = [
-                { name: regex },
-                { email: regex },
-                { subject: regex },
-                { message: regex },
-            ]
+            and.push({
+                $or: [
+                    { name: regex },
+                    { email: regex },
+                    { subject: regex },
+                    { message: regex },
+                ],
+            })
         }
+
+        if (and.length) filter.$and = and
 
         const [feedbacks, total] = await Promise.all([
             Feedback.find(filter)
                 .populate({
                     path: 'user',
-                    select: 'name email',
+                    select: 'name email image',
                 })
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
-                .lean(),
+                .lean({ virtuals: true }),
             Feedback.countDocuments(filter),
         ])
 
@@ -85,9 +97,9 @@ export const getFeedbackById = async (req, res, next) => {
         const feedback = await Feedback.findById(id)
             .populate({
                 path: 'user',
-                select: 'name email',
+                select: 'name email image',
             })
-            .lean()
+            .lean({ virtuals: true })
 
         if (!feedback) {
             return res.status(404).json({
@@ -132,9 +144,9 @@ export const toggleFeedbackRead = async (req, res, next) => {
         const data = await Feedback.findById(feedback._id)
             .populate({
                 path: 'user',
-                select: 'name email',
+                select: 'name email image',
             })
-            .lean()
+            .lean({ virtuals: true })
 
         return res.status(200).json({
             success: true,
