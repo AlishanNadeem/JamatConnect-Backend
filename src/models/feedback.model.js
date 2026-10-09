@@ -26,10 +26,18 @@ const feedback_schema = mongoose.Schema({
         type: String,
         required: true,
         trim: true,
-    }
+    },
+    is_read: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true
 })
+
+feedback_schema.index({ createdAt: -1 })
+feedback_schema.index({ is_read: 1, createdAt: -1 })
+feedback_schema.index({ email: 1 })
 
 const Feedback = mongoose.model('Feedback', feedback_schema)
 
