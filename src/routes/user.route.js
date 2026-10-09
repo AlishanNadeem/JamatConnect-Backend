@@ -11,6 +11,8 @@ import {
     registerFcmToken,
     removeFcmToken,
     toggleUserActive,
+    toggleUserReferral,
+    regenerateUserReferral,
     updateProfile,
 } from '../controllers/user.controller.js'
 import {
@@ -59,6 +61,20 @@ router.patch(
     AuthVerifier,
     RestrictAccess([ROLES.ADMIN]),
     toggleUserActive
+)
+
+router.patch(
+    '/toggle-referral/:id',
+    AuthVerifier,
+    RestrictAccess([ROLES.ADMIN]),
+    toggleUserReferral
+)
+
+router.patch(
+    '/regenerate-referral/:id',
+    AuthVerifier,
+    RestrictAccess([ROLES.ADMIN]),
+    regenerateUserReferral
 )
 
 router.delete('/delete/:id', AuthVerifier, RestrictAccess([ROLES.ADMIN]), deleteUser)
