@@ -470,6 +470,28 @@ export const toggleUserActive = async (req, res, next) => {
         user.active = !user.active
         await user.save()
 
+        try {
+
+            const is_active = user.active
+
+            await sendMail({
+                to: user.email,
+                subject: is_active
+                    ? 'Your Jamat Connect account is active again'
+                    : 'Your Jamat Connect account is inactive',
+                template: is_active ? 'admin_user_activated' : 'admin_user_deactivated',
+                template_vars: {
+                    name: user.name,
+                    email: user.email,
+                    app_name: 'Jamat Connect',
+                    logo_url: `${process.env.BASE_URL}uploads/logo.png`,
+                },
+            })
+
+        } catch (mail_error) {
+            logger.error(`User status email failed: ${mail_error.message}`)
+        }
+
         const data = await User.findById(user._id)
             .select(USER_PUBLIC_SELECT)
             .lean({ virtuals: true })
