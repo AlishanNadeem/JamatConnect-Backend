@@ -308,7 +308,7 @@ export const getUserById = async (req, res, next) => {
         const { id } = params
 
         const user = await User.findById(id)
-            .select(USER_PUBLIC_SELECT)
+            .select('-password -device_ids')
             .populate({
                 path: 'referred_by_user',
                 select: 'name email',
@@ -330,11 +330,15 @@ export const getUserById = async (req, res, next) => {
             .select('createdAt method source')
             .lean()
 
+        const push_notifications_enabled = Array.isArray(user.fcm_tokens) && user.fcm_tokens.length > 0
+        delete user.fcm_tokens
+
         return res.status(200).json({
             success: true,
             message: 'User fetched successfully.',
             data: {
                 ...user,
+                push_notifications_enabled,
                 last_login: last_login_log
                     ? {
                         at: last_login_log.createdAt,
