@@ -308,6 +308,10 @@ export const getUserById = async (req, res, next) => {
 
         const user = await User.findById(id)
             .select(USER_PUBLIC_SELECT)
+            .populate({
+                path: 'referred_by_user',
+                select: 'name email',
+            })
             .lean({ virtuals: true })
 
         if (!user) {
