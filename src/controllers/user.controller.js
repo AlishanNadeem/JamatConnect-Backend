@@ -6,6 +6,8 @@ import { buildPaginationResponse, getPagination } from '../helpers/pagination.js
 import { generateReferralCode } from '../helpers/referral.js'
 import LoginLog from '../models/login-log.model.js'
 import Business from '../models/business.model.js'
+import Job from '../models/job.model.js'
+import JobApplication from '../models/job-application.model.js'
 import User from '../models/user.model.js'
 import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, generatePassword, LOGIN_LOG_EVENTS, ROLES, searchRegex } from '../utils/index.js'
 
@@ -758,6 +760,102 @@ export const toggleSavedBusiness = async (req, res, next) => {
         })
     } catch (error) {
         logger.error(`Toggle Saved Business Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const getSavedJobs = async (req, res, next) => {
+    try {
+        const { decoded } = req
+
+        const user = await User.findById(decoded.id).select('saved_jobs').lean()
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        const saved_ids = user.saved_jobs || []
+
+        const jobs = await Job.find({
+            _id: { $in: saved_ids },
+        })
+            .select('title employment_type workplace_type location business createdAt closed')
+            .populate('business', 'name logo')
+            .lean({ virtuals: true })
+
+        const order = new Map(saved_ids.map((id, index) => [String(id), index]))
+        jobs.sort((a, b) => (order.get(String(b._id)) ?? 0) - (order.get(String(a._id)) ?? 0))
+
+        const job_ids = jobs.map((job) => job._id)
+        const applied_job_ids = job_ids.length
+            ? await JobApplication.find({
+                job: { $in: job_ids },
+                applicant: decoded.id,
+            }).distinct('job')
+            : []
+
+        const applied_job_id_set = new Set(applied_job_ids.map((job_id) => String(job_id)))
+
+        return res.status(200).json({
+            success: true,
+            message: 'Saved jobs fetched successfully.',
+            data: jobs.map((job) => ({
+                ...job,
+                applied: applied_job_id_set.has(String(job._id)),
+            })),
+        })
+    } catch (error) {
+        logger.error(`Get Saved Jobs Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const toggleSavedJob = async (req, res, next) => {
+    try {
+        const { decoded, params } = req
+        const job_id = params.id
+
+        const job = await Job.findById(job_id).select('_id')
+
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found.',
+            })
+        }
+
+        const user = await User.findById(decoded.id).select('saved_jobs')
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        const is_saved = user.saved_jobs.some((id) => String(id) === String(job_id))
+
+        if (is_saved) {
+            user.saved_jobs.pull(job_id)
+        } else {
+            user.saved_jobs.addToSet(job_id)
+        }
+
+        await user.save()
+
+        return res.status(200).json({
+            success: true,
+            message: is_saved ? 'Job removed from saved.' : 'Job saved.',
+            data: {
+                saved: !is_saved,
+                saved_jobs: (user.saved_jobs || []).map((id) => String(id)),
+            },
+        })
+    } catch (error) {
+        logger.error(`Toggle Saved Job Error: ${error.message}`)
         next(error)
     }
 }

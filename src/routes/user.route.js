@@ -14,7 +14,9 @@ import {
     toggleUserReferral,
     regenerateUserReferral,
     getSavedBusinesses,
+    getSavedJobs,
     toggleSavedBusiness,
+    toggleSavedJob,
     updateProfile,
 } from '../controllers/user.controller.js'
 import {
@@ -48,6 +50,10 @@ router.delete('/delete-account', AuthVerifier, deleteAccount)
 router.get('/saved-businesses', AuthVerifier, getSavedBusinesses)
 
 router.patch('/saved-business/:id', AuthVerifier, toggleSavedBusiness)
+
+router.get('/saved-jobs', AuthVerifier, getSavedJobs)
+
+router.patch('/saved-job/:id', AuthVerifier, toggleSavedJob)
 
 router.get('/get', AuthVerifier, RestrictAccess([ROLES.ADMIN]), getUsers)
 

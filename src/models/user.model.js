@@ -44,6 +44,10 @@ const user_schema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Business',
     }],
+    saved_jobs: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Job',
+    }],
     device_ids: [{
         type: String
     }],
