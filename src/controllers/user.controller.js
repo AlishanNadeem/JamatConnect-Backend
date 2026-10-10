@@ -5,6 +5,7 @@ import { sendMail } from '../helpers/mail.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import { generateReferralCode } from '../helpers/referral.js'
 import LoginLog from '../models/login-log.model.js'
+import Business from '../models/business.model.js'
 import User from '../models/user.model.js'
 import { AUTH_TYPES, DUMMY_USER_IMAGE_PATH, generatePassword, LOGIN_LOG_EVENTS, ROLES, searchRegex } from '../utils/index.js'
 
@@ -674,6 +675,77 @@ export const deleteUser = async (req, res, next) => {
         })
     } catch (error) {
         logger.error(`Delete User Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const getSavedBusinesses = async (req, res, next) => {
+    try {
+        const { decoded } = req
+
+        const user = await User.findById(decoded.id).select('saved_businesses').lean()
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Saved businesses fetched successfully.',
+            data: (user.saved_businesses || []).map((id) => String(id)),
+        })
+    } catch (error) {
+        logger.error(`Get Saved Businesses Error: ${error.message}`)
+        next(error)
+    }
+}
+
+export const toggleSavedBusiness = async (req, res, next) => {
+    try {
+        const { decoded, params } = req
+        const business_id = params.id
+
+        const business = await Business.findById(business_id).select('_id')
+
+        if (!business) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found.',
+            })
+        }
+
+        const user = await User.findById(decoded.id).select('saved_businesses')
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.',
+            })
+        }
+
+        const is_saved = user.saved_businesses.some((id) => String(id) === String(business_id))
+
+        if (is_saved) {
+            user.saved_businesses.pull(business_id)
+        } else {
+            user.saved_businesses.addToSet(business_id)
+        }
+
+        await user.save()
+
+        return res.status(200).json({
+            success: true,
+            message: is_saved ? 'Business removed from saved.' : 'Business saved.',
+            data: {
+                saved: !is_saved,
+                saved_businesses: (user.saved_businesses || []).map((id) => String(id)),
+            },
+        })
+    } catch (error) {
+        logger.error(`Toggle Saved Business Error: ${error.message}`)
         next(error)
     }
 }

@@ -13,6 +13,8 @@ import {
     toggleUserActive,
     toggleUserReferral,
     regenerateUserReferral,
+    getSavedBusinesses,
+    toggleSavedBusiness,
     updateProfile,
 } from '../controllers/user.controller.js'
 import {
@@ -42,6 +44,10 @@ router.post('/fcm-token', AuthVerifier, validator(FCM_TOKEN_VALIDATOR), register
 router.delete('/fcm-token', AuthVerifier, validator(FCM_TOKEN_VALIDATOR), removeFcmToken)
 
 router.delete('/delete-account', AuthVerifier, deleteAccount)
+
+router.get('/saved-businesses', AuthVerifier, getSavedBusinesses)
+
+router.patch('/saved-business/:id', AuthVerifier, toggleSavedBusiness)
 
 router.get('/get', AuthVerifier, RestrictAccess([ROLES.ADMIN]), getUsers)
 
