@@ -692,10 +692,22 @@ export const getSavedBusinesses = async (req, res, next) => {
             })
         }
 
+        const saved_ids = user.saved_businesses || []
+
+        const businesses = await Business.find({
+            _id: { $in: saved_ids },
+        })
+            .select('name category logo address verified')
+            .populate('category', 'name')
+            .lean({ virtuals: true })
+
+        const order = new Map(saved_ids.map((id, index) => [String(id), index]))
+        businesses.sort((a, b) => (order.get(String(b._id)) ?? 0) - (order.get(String(a._id)) ?? 0))
+
         return res.status(200).json({
             success: true,
             message: 'Saved businesses fetched successfully.',
-            data: (user.saved_businesses || []).map((id) => String(id)),
+            data: businesses,
         })
     } catch (error) {
         logger.error(`Get Saved Businesses Error: ${error.message}`)
