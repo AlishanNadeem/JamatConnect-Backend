@@ -1,12 +1,14 @@
 import logger from '../config/logger.js'
 import { removeFiles } from '../helpers/folder.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
+import { generateReviewToken } from '../helpers/review.js'
 import Business from '../models/business.model.js'
 import BusinessCategory from '../models/business-category.model.js'
+import BusinessReview from '../models/business-review.model.js'
 import BusinessView from '../models/business-view.model.js'
 import Job from '../models/job.model.js'
 import { generateSlug, getBusinessByIdentifier, isBusinessOwner } from '../services/business.service.js'
-import { BUSINESS_STATUS, isAdmin, ROLES, searchRegex } from '../utils/index.js'
+import { BUSINESS_STATUS, getMediaUrl, isAdmin, ROLES, searchRegex } from '../utils/index.js'
 
 const getViewDate = () => new Date().toISOString().slice(0, 10)
 
@@ -71,6 +73,7 @@ export const createBusiness = async (req, res, next) => {
             hours: hours || [],
             logo: uploaded_logo,
             image: uploaded_image,
+            review_token: generateReviewToken(),
         })
 
         await business.save()
@@ -188,6 +191,9 @@ export const getBusinessById = async (req, res, next) => {
         const { decoded, params, query } = req
         const { id } = params
         const include_jobs = String(query.jobs).toLowerCase() === 'true'
+        const include_reviews = query.reviews === undefined
+            ? true
+            : String(query.reviews).toLowerCase() === 'true'
 
         const business = await getBusinessByIdentifier(id)
 
@@ -210,6 +216,9 @@ export const getBusinessById = async (req, res, next) => {
 
         const response_data = { ...business }
 
+        // Never expose review token on public/detail payloads
+        delete response_data.review_token
+
         if (include_jobs) {
 
             const job_filter = { business: business._id }
@@ -225,6 +234,23 @@ export const getBusinessById = async (req, res, next) => {
                 .limit(3)
                 .lean({ virtuals: true })
 
+        }
+
+        if (include_reviews) {
+            const reviews = await BusinessReview.find({ business: business._id })
+                .populate('user', 'name image')
+                .sort({ createdAt: -1 })
+                .limit(2)
+                .lean({ virtuals: true })
+
+            response_data.reviews = reviews.map((review) => ({
+                id: String(review._id),
+                rating: review.rating,
+                comment: review.comment || '',
+                created_at: review.createdAt,
+                name: review.user?.name || 'Member',
+                image_url: review.user?.image_url || getMediaUrl(review.user?.image) || null,
+            }))
         }
 
         return res.status(200).json({
@@ -495,6 +521,7 @@ export const deleteBusiness = async (req, res, next) => {
         }
 
         await BusinessView.deleteMany({ business: id })
+        await BusinessReview.deleteMany({ business: id })
         await Business.findByIdAndDelete(id)
 
         if (business.logo) removeFiles(business.logo)

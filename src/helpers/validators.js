@@ -528,3 +528,15 @@ export const VERIFY_SPECIAL_CODE_VALIDATOR = Joi.object({
         'string.empty': 'Code cannot be empty.',
     }),
 })
+
+export const UPSERT_BUSINESS_REVIEW_VALIDATOR = Joi.object({
+    rating: Joi.number().integer().min(1).max(5).required().messages({
+        'any.required': 'Rating is required.',
+        'number.base': 'Rating must be a number.',
+        'number.min': 'Rating must be at least 1.',
+        'number.max': 'Rating cannot exceed 5.',
+    }),
+    comment: Joi.string().allow('').max(1000).optional().messages({
+        'string.max': 'Comment cannot exceed 1000 characters.',
+    }),
+})

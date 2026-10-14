@@ -95,6 +95,23 @@ const business_schema = mongoose.Schema({
         default: 0,
         min: 0,
     },
+    review_count: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    average_rating: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+    },
+    review_token: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        default: null,
+    },
     rejection_reason: {
         type: String,
         trim: true,
@@ -126,6 +143,7 @@ business_schema.virtual('image_url').get(function () {
 
 business_schema.index({ user: 1, createdAt: -1 })
 business_schema.index({ slug: 1 }, { unique: true })
+business_schema.index({ review_token: 1 }, { unique: true, sparse: true })
 business_schema.index({ category: 1, status: 1, active: 1 })
 business_schema.index({ status: 1, active: 1, featured: -1, createdAt: -1 })
 business_schema.index({ 'address.city': 1, status: 1, active: 1 })
