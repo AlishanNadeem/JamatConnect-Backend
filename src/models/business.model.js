@@ -90,6 +90,11 @@ const business_schema = mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    views_count: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
     rejection_reason: {
         type: String,
         trim: true,

@@ -3,9 +3,12 @@ import { removeFiles } from '../helpers/folder.js'
 import { buildPaginationResponse, getPagination } from '../helpers/pagination.js'
 import Business from '../models/business.model.js'
 import BusinessCategory from '../models/business-category.model.js'
+import BusinessView from '../models/business-view.model.js'
 import Job from '../models/job.model.js'
 import { generateSlug, getBusinessByIdentifier, isBusinessOwner } from '../services/business.service.js'
 import { BUSINESS_STATUS, isAdmin, ROLES, searchRegex } from '../utils/index.js'
+
+const getViewDate = () => new Date().toISOString().slice(0, 10)
 
 export const createBusiness = async (req, res, next) => {
 
@@ -393,6 +396,82 @@ export const toggleBusinessActive = async (req, res, next) => {
     }
 }
 
+export const recordBusinessView = async (req, res, next) => {
+    try {
+
+        const { params, decoded } = req
+        const { id } = params
+
+        const business = await Business.findById(id).select('_id user status active views_count')
+
+        if (!business) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found.',
+            })
+        }
+
+        if (business.status !== BUSINESS_STATUS.APPROVED || !business.active) {
+            return res.status(404).json({
+                success: false,
+                message: 'Business not found.',
+            })
+        }
+
+        if (isBusinessOwner(business, decoded.id)) {
+            return res.status(200).json({
+                success: true,
+                message: 'Owner view skipped.',
+                data: {
+                    counted: false,
+                    views_count: business.views_count || 0,
+                },
+            })
+        }
+
+        const view_date = getViewDate()
+
+        try {
+            await BusinessView.create({
+                business: business._id,
+                user: decoded.id,
+                date: view_date,
+            })
+        } catch (error) {
+            if (error?.code === 11000) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'View already recorded for today.',
+                    data: {
+                        counted: false,
+                        views_count: business.views_count || 0,
+                    },
+                })
+            }
+            throw error
+        }
+
+        const updated_business = await Business.findByIdAndUpdate(
+            business._id,
+            { $inc: { views_count: 1 } },
+            { new: true, select: 'views_count' }
+        )
+
+        return res.status(200).json({
+            success: true,
+            message: 'Business view recorded.',
+            data: {
+                counted: true,
+                views_count: updated_business?.views_count || 0,
+            },
+        })
+
+    } catch (error) {
+        logger.error(`Record Business View Error: ${error.message}`)
+        next(error)
+    }
+}
+
 export const deleteBusiness = async (req, res, next) => {
     try {
 
@@ -415,6 +494,7 @@ export const deleteBusiness = async (req, res, next) => {
             })
         }
 
+        await BusinessView.deleteMany({ business: id })
         await Business.findByIdAndDelete(id)
 
         if (business.logo) removeFiles(business.logo)
