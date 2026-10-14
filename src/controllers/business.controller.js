@@ -328,6 +328,9 @@ export const updateBusiness = async (req, res, next) => {
             if (featured !== undefined) updated_fields.featured = featured
             if (active !== undefined) updated_fields.active = active
             if (rejection_reason !== undefined) updated_fields.rejection_reason = rejection_reason || null
+        } else if (business.status === BUSINESS_STATUS.REJECTED) {
+            updated_fields.status = BUSINESS_STATUS.PENDING
+            updated_fields.rejection_reason = null
         }
 
         const updated_business = await Business.findByIdAndUpdate(
