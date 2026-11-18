@@ -522,6 +522,23 @@ export const CREATE_SPECIAL_VALIDATOR = Joi.object({
     }),
 })
 
+export const UPDATE_SPECIAL_VALIDATOR = Joi.object({
+    title: Joi.string().min(2).max(100).optional().messages({
+        'string.empty': 'Title cannot be empty.',
+        'string.min': 'Title must be at least 2 characters long.',
+        'string.max': 'Title cannot exceed 100 characters.',
+    }),
+    description: Joi.string().min(10).max(1000).optional().messages({
+        'string.empty': 'Description cannot be empty.',
+        'string.min': 'Description must be at least 10 characters long.',
+        'string.max': 'Description cannot exceed 1000 characters.',
+    }),
+    discount: Joi.string().min(1).max(100).optional().messages({
+        'string.empty': 'Discount cannot be empty.',
+        'string.max': 'Discount cannot exceed 100 characters.',
+    }),
+})
+
 export const VERIFY_SPECIAL_CODE_VALIDATOR = Joi.object({
     code: Joi.string().min(4).max(20).required().messages({
         'any.required': 'Code is required.',

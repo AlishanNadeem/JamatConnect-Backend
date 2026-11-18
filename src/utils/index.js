@@ -121,6 +121,29 @@ export const getMarketplaceExpiryDate = () => {
     return expires_at
 }
 
+export const SPECIAL_DURATION_DAYS = 30
+export const SPECIAL_EDIT_WINDOW_HOURS = 24
+export const REDEMPTION_CODE_LENGTH = 8
+
+export const getSpecialExpiryDate = () => {
+    const expires_at = new Date()
+    expires_at.setDate(expires_at.getDate() + SPECIAL_DURATION_DAYS)
+    expires_at.setHours(0, 0, 0, 0)
+    return expires_at
+}
+
+export const isWithinSpecialEditWindow = (created_at) => {
+    if (!created_at) return false
+    const created = created_at instanceof Date ? created_at : new Date(created_at)
+    const window_ms = SPECIAL_EDIT_WINDOW_HOURS * 60 * 60 * 1000
+    return Date.now() - created.getTime() <= window_ms
+}
+
+export const generateRedemptionCode = (length = REDEMPTION_CODE_LENGTH) => {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    return Array.from({ length }, () => alphabet[crypto.randomInt(0, alphabet.length)]).join('')
+}
+
 export const EMPLOYMENT_TYPES = {
     FULL_TIME: "full_time",
     PART_TIME: "part_time",

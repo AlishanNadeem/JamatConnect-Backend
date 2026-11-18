@@ -6,6 +6,7 @@ import logger from './src/config/logger.js'
 import { makeFolders } from './src/helpers/folder.js'
 import { startGestureMessageJob } from './src/jobs/gesture-message.job.js'
 import { startMarketplaceExpiryJob } from './src/jobs/marketplace-expiry.job.js'
+import { startSpecialExpiryJob } from './src/jobs/special-expiry.job.js'
 
 dotenv.config()
 
@@ -19,6 +20,7 @@ const serverHandler = async () => {
         await connectDB()
         makeFolders()
         startMarketplaceExpiryJob()
+        startSpecialExpiryJob()
         startGestureMessageJob()
 
     } catch (e) {
